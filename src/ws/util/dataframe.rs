@@ -9,7 +9,7 @@ use ws::util::header as dfh;
 use ws::util::mask;
 
 /// Writes a DataFrame to a Writer.
-pub fn write_dataframe<W>(writer: &mut W, mask: bool, dataframe: DataFrame) -> WebSocketResult<()>
+pub fn write_dataframe<W>(writer: &mut W, mask: bool, dataframe: &DataFrame) -> WebSocketResult<()>
 	where W: Write {
 	
 	let mut flags = dfh::DataFrameFlags::empty();

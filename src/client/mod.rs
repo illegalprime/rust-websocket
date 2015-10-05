@@ -109,14 +109,13 @@ impl<D, S: ws::Sender<D>, R: ws::Receiver<D>> Client<D, S, R> {
 		}
 	}
 	/// Sends a single data frame to the remote endpoint.
-	pub fn send_dataframe(&mut self, dataframe: D) -> WebSocketResult<()> {
-		self.sender.send_dataframe(dataframe)
+	pub fn send_dataframe(&mut self, dataframe: &D) -> WebSocketResult<()> {
+        self.sender.send_dataframe(dataframe)
 	}
 	/// Sends a single message to the remote endpoint.
-	pub fn send_message<M>(&mut self, message: M) -> WebSocketResult<()> 
-		where M: ws::Message<D> {
-		
-		self.sender.send_message(message)
+	pub fn send_message<M>(&mut self, message: &M) -> WebSocketResult<()>
+	where M: ws::Message<D> {
+        self.sender.send_message(message)
 	}
 	/// Reads a single data frame from the remote endpoint.
 	pub fn recv_dataframe(&mut self) -> WebSocketResult<D> {

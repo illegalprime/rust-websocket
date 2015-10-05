@@ -64,7 +64,7 @@ impl ws::Message<DataFrame> for Message {
 		message_from_data(first.opcode, data)
 	}
 	/// Turns this message into an iterator over data frames
-	fn into_iter(self) -> Take<Repeat<DataFrame>> {
+	fn into_iter(self) -> Self::DataFrameIterator {
 		// Just return a single data frame representing this message.
 		let (opcode, data) = match self {
 			Message::Text(payload) => (Opcode::Text, payload.into_bytes()),
@@ -82,6 +82,11 @@ impl ws::Message<DataFrame> for Message {
 		let dataframe = DataFrame::new(true, opcode, data);
 		repeat(dataframe).take(1)
 	}
+
+    /// Turns this message into an iterator over references to dataframes
+    fn iter(&self) -> Self::DataFrameIterator {
+        unimplemented!();
+    }
 }
 
 /// Represents data contained in a Close message

@@ -12,4 +12,6 @@ pub trait Message<D>: Sized {
 	fn from_dataframes(frames: Vec<D>) -> WebSocketResult<Self>;
 	/// Turns this message into an iterator over data frames
 	fn into_iter(self) -> Self::DataFrameIterator;
+    /// Turns this message into an iterator over references to data frames
+    fn iter(&self) -> Self::DataFrameIterator;
 }
