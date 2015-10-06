@@ -4,6 +4,14 @@
 ///
 /// The data held in a DataFrame is never masked.
 /// Masking/unmasking is done when sending and receiving the data frame,
+use std::io::{Read, Write};
+
+use result::{WebSocketResult, WebSocketError};
+
+use ws::util::header as dfh;
+use ws::util::mask;
+
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataFrame {
 	/// Whether or no this constitutes the end of a message
@@ -27,6 +35,55 @@ impl DataFrame {
 		}
 	}
 }
+
+pub trait DataFrameT {
+    fn meta(&self) -> u8;
+    fn data(&self) -> &[u8];
+
+    fn parse<R>(reader: &mut R, masked: bool) -> WebSocketResult<DataFrame>
+    where R: Read {
+        let header = try!(dfh::read_header(reader)); 
+        Ok(DataFrame {
+            finished: header.flags.contains(dfh::FIN),
+            reserved: [
+                header.flags.contains(dfh::RSV1),
+                header.flags.contains(dfh::RSV2),
+                header.flags.contains(dfh::RSV3)
+            ],
+            opcode: Opcode::new(header.opcode).expect("Invalid header opcode!"),
+            data: match header.mask {
+                Some(mask) => {
+                    if !masked {
+                        return Err(WebSocketError::DataFrameError(
+                            "Expected unmasked data frame".to_string()
+                        ));
+                    }
+
+                    let data: Vec<u8> = try!(reader.take(header.len).bytes().collect());
+                    mask::mask_data(mask, &data)
+                }
+                None => {
+                    if masked {
+                        return Err(WebSocketError::DataFrameError(
+                            "Expected masked data frame".to_string()
+                        ));
+                    }
+
+                    try!(reader.take(header.len).bytes().collect())
+                }
+            }
+        })
+    }
+
+    fn write<W>(writer: &mut W, mask: bool)
+        where W: Write;
+}
+
+pub struct DataFrameRef<'a> {
+    meta: u8,
+    data: &'a [u8],
+}
+
 
 /// Represents a WebSocket data frame opcode
 #[derive(Clone, Debug, Copy, PartialEq)]
