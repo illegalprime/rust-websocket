@@ -27,6 +27,37 @@ pub struct DataFrameHeader {
 	pub len: u64
 }
 
+impl DataFrameHeader {
+    fn new(fin: bool, reserved: [bool; 3], opcode: Opcode) -> Self {
+        let mut flags = DataFrameFlags::empty();
+        if fin {
+            flags.insert(FIN);
+        }
+        if reserved[0] {
+            flags.insert(RSV1);
+        }
+        if reserved[1] {
+            flags.insert(RSV2);
+        }
+        if reserved[2] {
+            flags.insert(RSV3);
+        }
+
+        let masking_key = if mask {
+            Some(mask::gen_mask())
+        } else {
+            None
+        };
+
+        DataFrameHeader {
+            flags: flags,
+            opcode: opcode as u8,
+            mask: masking_key,
+            len: self.data().len() as u64,
+        }
+    }
+}
+
 /// Writes a data frame header.
 pub fn write_header<W>(writer: &mut W, header: DataFrameHeader) -> WebSocketResult<()>
 	where W: Write {
@@ -135,6 +166,70 @@ pub fn read_header<R>(reader: &mut R) -> WebSocketResult<DataFrameHeader>
 		mask: mask, 
 		len: len
 	})
+}
+
+/// Represents a WebSocket data frame opcode
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub enum Opcode {
+	/// A continuation data frame
+	Continuation,
+	/// A UTF-8 text data frame
+	Text,
+	/// A binary data frame
+	Binary,
+	/// An undefined non-control data frame
+	NonControl1,
+	/// An undefined non-control data frame
+	NonControl2,
+	/// An undefined non-control data frame
+	NonControl3,
+	/// An undefined non-control data frame
+	NonControl4,
+	/// An undefined non-control data frame
+	NonControl5,
+	/// A close data frame
+	Close,
+	/// A ping data frame
+	Ping,
+	/// A pong data frame
+	Pong,
+	/// An undefined control data frame
+	Control1,
+	/// An undefined control data frame
+	Control2,
+	/// An undefined control data frame
+	Control3,
+	/// An undefined control data frame
+	Control4,
+	/// An undefined control data frame
+	Control5,
+}
+
+impl Opcode {
+	/// Attempts to form an Opcode from a nibble.
+	///
+	/// Returns the Opcode, or None if the opcode is out of range.
+	pub fn new(op: u8) -> Option<Opcode> {
+		Some(match op {
+			0 => Opcode::Continuation,
+			1 => Opcode::Text,
+			2 => Opcode::Binary,
+			3 => Opcode::NonControl1,
+			4 => Opcode::NonControl2,
+			5 => Opcode::NonControl3,
+			6 => Opcode::NonControl4,
+			7 => Opcode::NonControl5,
+			8 => Opcode::Close,
+			9 => Opcode::Ping,
+			10 => Opcode::Pong,
+			11 => Opcode::Control1,
+			12 => Opcode::Control2,
+			13 => Opcode::Control3,
+			14 => Opcode::Control4,
+			15 => Opcode::Control5,
+			_ => return None,
+		})
+	}
 }
 
 #[cfg(all(feature = "nightly", test))]

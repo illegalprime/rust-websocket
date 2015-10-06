@@ -36,115 +36,75 @@ impl DataFrame {
 	}
 }
 
-pub trait DataFrameT {
-    fn meta(&self) -> u8;
+pub trait WritableDataFrame {
+    #[inline(always)]
+    fn is_last(&self) -> bool;
+
+    #[inline(always)]
+    fn reserved(&self) -> [bool; 3];
+
+    #[inline(always)]
+    fn opcode(&self) -> Opcode;
+
+    #[inline(always)]
     fn data(&self) -> &[u8];
 
-    fn parse<R>(reader: &mut R, masked: bool) -> WebSocketResult<DataFrame>
-    where R: Read {
-        let header = try!(dfh::read_header(reader)); 
-        Ok(DataFrame {
-            finished: header.flags.contains(dfh::FIN),
-            reserved: [
-                header.flags.contains(dfh::RSV1),
-                header.flags.contains(dfh::RSV2),
-                header.flags.contains(dfh::RSV3)
-            ],
-            opcode: Opcode::new(header.opcode).expect("Invalid header opcode!"),
-            data: match header.mask {
-                Some(mask) => {
-                    if !masked {
-                        return Err(WebSocketError::DataFrameError(
-                            "Expected unmasked data frame".to_string()
-                        ));
-                    }
+    fn write<W>(&self, writer: &mut W, mask: bool) -> WebSocketResult<()>
+    where W: Write {
+        let reserved = self.reserved();
+        let mut flags = dfh::DataFrameFlags::empty();
+        if self.is_last() {
+            flags.insert(dfh::FIN);
+        }
+        if reserved[0] {
+            flags.insert(dfh::RSV1);
+        }
+        if reserved[1] {
+            flags.insert(dfh::RSV2);
+        }
+        if reserved[2] {
+            flags.insert(dfh::RSV3);
+        }
 
-                    let data: Vec<u8> = try!(reader.take(header.len).bytes().collect());
-                    mask::mask_data(mask, &data)
-                }
-                None => {
-                    if masked {
-                        return Err(WebSocketError::DataFrameError(
-                            "Expected masked data frame".to_string()
-                        ));
-                    }
+        let masking_key = if mask {
+            Some(mask::gen_mask())
+        } else {
+            None
+        };
 
-                    try!(reader.take(header.len).bytes().collect())
-                }
-            }
-        })
+        let header = dfh::DataFrameHeader {
+            flags: flags,
+            opcode: self.opcode() as u8,
+            mask: masking_key,
+            len: self.data().len() as u64,
+        };
+
+        try!(dfh::write_header(writer, header));
+
+        match masking_key {
+            Some(mask) => try!(writer.write_all(&mask::mask_data(mask, self.data())[..])),
+            None => try!(writer.write_all(self.data())),
+        }
+        try!(writer.flush());
+        Ok(())
+    }
+}
+
+impl WritableDataFrame for DataFrame {
+    fn opcode(&self) -> Opcode {
+        return self.opcode;
     }
 
-    fn write<W>(writer: &mut W, mask: bool)
-        where W: Write;
+    fn is_last(&self) -> bool {
+        return self.finished;
+    }
+
+    fn reserved(&self) -> [bool; 3] {
+        return self.reserved;
+    }
+
+    fn data(&self) -> &[u8] {
+        return &self.data[..];
+    }
 }
 
-pub struct DataFrameRef<'a> {
-    meta: u8,
-    data: &'a [u8],
-}
-
-
-/// Represents a WebSocket data frame opcode
-#[derive(Clone, Debug, Copy, PartialEq)]
-pub enum Opcode {
-	/// A continuation data frame
-	Continuation,
-	/// A UTF-8 text data frame
-	Text,
-	/// A binary data frame
-	Binary,
-	/// An undefined non-control data frame
-	NonControl1,
-	/// An undefined non-control data frame
-	NonControl2,
-	/// An undefined non-control data frame
-	NonControl3,
-	/// An undefined non-control data frame
-	NonControl4,
-	/// An undefined non-control data frame
-	NonControl5,
-	/// A close data frame
-	Close,
-	/// A ping data frame
-	Ping,
-	/// A pong data frame
-	Pong,
-	/// An undefined control data frame
-	Control1,
-	/// An undefined control data frame
-	Control2,
-	/// An undefined control data frame
-	Control3,
-	/// An undefined control data frame
-	Control4,
-	/// An undefined control data frame
-	Control5,
-}
-
-impl Opcode {
-	/// Attempts to form an Opcode from a nibble.
-	///
-	/// Returns the Opcode, or None if the opcode is out of range.
-	pub fn new(op: u8) -> Option<Opcode> {
-		Some(match op {
-			0 => Opcode::Continuation,
-			1 => Opcode::Text,
-			2 => Opcode::Binary,
-			3 => Opcode::NonControl1,
-			4 => Opcode::NonControl2,
-			5 => Opcode::NonControl3,
-			6 => Opcode::NonControl4,
-			7 => Opcode::NonControl5,
-			8 => Opcode::Close,
-			9 => Opcode::Ping,
-			10 => Opcode::Pong,
-			11 => Opcode::Control1,
-			12 => Opcode::Control2,
-			13 => Opcode::Control3,
-			14 => Opcode::Control4,
-			15 => Opcode::Control5,
-			_ => return None,
-		})
-	}
-}
