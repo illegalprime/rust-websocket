@@ -8,14 +8,14 @@ use ws;
 
 /// A Receiver that wraps a Reader and provides a default implementation using
 /// DataFrames and Messages.
-pub struct Receiver<R> {
+pub struct Receiver<'a, R> {
 	inner: R,
-	buffer: Vec<DataFrame>
+	buffer: Vec<DataFrame<'a>>
 }
 
-impl<R> Receiver<R> {
+impl<'a, R> Receiver<'a, R> {
 	/// Create a new Receiver using the specified Reader.
-	pub fn new(reader: R) -> Receiver<R> {
+	pub fn new(reader: R) -> Self {
 		Receiver {
 			inner: reader,
 			buffer: Vec::new()
@@ -31,13 +31,13 @@ impl<R> Receiver<R> {
 	}
 }
 
-impl<R: Read> ws::Receiver<DataFrame> for Receiver<R> {
+impl<'r, R: Read> ws::Receiver<DataFrame<'r>> for Receiver<'r, R> {
 	/// Reads a single data frame from the remote endpoint.
-	fn recv_dataframe(&mut self) -> WebSocketResult<DataFrame> {
+	fn recv_dataframe(&mut self) -> WebSocketResult<DataFrame<'r>> {
 		read_dataframe(&mut self.inner, true)
 	}
 	/// Returns the data frames that constitute one message.
-	fn recv_message_dataframes(&mut self) -> WebSocketResult<Vec<DataFrame>> {
+	fn recv_message_dataframes(&mut self) -> WebSocketResult<Vec<DataFrame<'r>>> {
 		let mut finished = if self.buffer.is_empty() {
 			let first = try!(self.recv_dataframe());
 			

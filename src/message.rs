@@ -1,6 +1,7 @@
 //! Module containing the default implementation for messages.
 
 use std::io;
+use std::borrow::Cow;
 use std::iter::{Take, Repeat, repeat};
 use result::{WebSocketResult, WebSocketError};
 use dataframe::{DataFrame, Opcode};
@@ -27,8 +28,8 @@ pub enum Message {
 	Pong(Vec<u8>),
 }
 
-impl ws::Message<DataFrame> for Message {
-	type DataFrameIterator = Take<Repeat<DataFrame>>;
+impl<'d> ws::Message<DataFrame<'d>> for Message {
+	type DataFrameIterator = Take<Repeat<DataFrame<'d>>>;
 	/// Attempt to form a message from a series of data frames
 	fn from_dataframes(frames: Vec<DataFrame>) -> WebSocketResult<Message> {
 		let mut iter = frames.iter();
@@ -37,7 +38,7 @@ impl ws::Message<DataFrame> for Message {
 			"No dataframes provided".to_string()
 		)));
 		
-		let mut data = first.data.clone();
+		let mut data = first.data.into_owned();
 		
 		if first.reserved != [false; 3] {
 			return Err(WebSocketError::ProtocolError(

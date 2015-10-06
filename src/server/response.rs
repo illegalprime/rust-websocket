@@ -132,7 +132,7 @@ impl<R: Read, W: Write> Response<R, W> {
 	}
 	
 	/// Send this response, returning a Client ready to transmit/receive data frames
-	pub fn send(mut self) -> WebSocketResult<Client<DataFrame, Sender<W>, Receiver<R>>> {
+	pub fn send<'r, 'd>(mut self) -> WebSocketResult<Client<DataFrame<'d>, Sender<W>, Receiver<'r, R>>> {
 		let version = self.version;
 		let status = self.status;
 		let headers = self.headers.clone();

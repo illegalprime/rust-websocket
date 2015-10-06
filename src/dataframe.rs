@@ -20,7 +20,7 @@ pub struct DataFrame<'a> {
 
 impl<'a> DataFrame<'a> {
 	/// Creates a new DataFrame.
-	pub fn new(finished: bool, opcode: Opcode, data: Vec<u8>) -> DataFrame {
+	pub fn new(finished: bool, opcode: Opcode, data: Vec<u8>) -> Self {
 		DataFrame {
 			finished: finished,
 			reserved: [false; 3],

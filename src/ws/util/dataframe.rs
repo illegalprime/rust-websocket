@@ -1,6 +1,7 @@
 //! Utility methods for reading and writing data frames.
 
 use std::io::{Read, Write};
+use std::borrow::Cow;
 
 use dataframe::{DataFrame, Opcode};
 use result::{WebSocketResult, WebSocketError};
@@ -38,7 +39,7 @@ pub fn write_dataframe<W>(writer: &mut W, mask: bool, dataframe: &DataFrame) -> 
 }
 
 /// Reads a DataFrame from a Reader.
-pub fn read_dataframe<R>(reader: &mut R, should_be_masked: bool) -> WebSocketResult<DataFrame> 
+pub fn read_dataframe<'r, R>(reader: &'r mut R, should_be_masked: bool) -> WebSocketResult<DataFrame<'r>> 
 	where R: Read {
 
 	let header = try!(dfh::read_header(reader));
@@ -51,7 +52,7 @@ pub fn read_dataframe<R>(reader: &mut R, should_be_masked: bool) -> WebSocketRes
 			header.flags.contains(dfh::RSV3)
 		],
 		opcode: Opcode::new(header.opcode).expect("Invalid header opcode!"),
-		data: match header.mask {
+		data: Cow::Owned(match header.mask {
 			Some(mask) => {
 				if !should_be_masked {
 					return Err(WebSocketError::DataFrameError(
@@ -71,7 +72,7 @@ pub fn read_dataframe<R>(reader: &mut R, should_be_masked: bool) -> WebSocketRes
 
 				try!(reader.take(header.len).bytes().collect())
 			}
-		}
+		}),
 	})
 }
 

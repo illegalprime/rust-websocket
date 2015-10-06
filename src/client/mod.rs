@@ -62,7 +62,7 @@ pub struct Client<D, S, R> {
 	_dataframe: PhantomData<D>
 }
 
-impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
+impl<'r, 'd> Client<DataFrame<'d>, Sender<WebSocketStream>, Receiver<'r, WebSocketStream>> {
 	/// Connects to the given ws:// or wss:// URL and return a Request to be sent.
 	///
 	/// A connection is established, however the request is not sent to
