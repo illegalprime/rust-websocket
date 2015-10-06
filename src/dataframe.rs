@@ -4,8 +4,10 @@
 ///
 /// The data held in a DataFrame is never masked.
 /// Masking/unmasking is done when sending and receiving the data frame,
+use std::borrow::Cow;
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct DataFrame {
+pub struct DataFrame<'a> {
 	/// Whether or no this constitutes the end of a message
 	pub finished: bool,
 	/// The reserved portion of the data frame (RFC6455 5.2)
@@ -13,17 +15,17 @@ pub struct DataFrame {
 	/// The opcode associated with this data frame
 	pub opcode: Opcode,
 	/// The payload associated with this data frame
-	pub data: Vec<u8>,
+	pub data: Cow<'a, Vec<u8>>,
 }
 
-impl DataFrame {
+impl<'a> DataFrame<'a> {
 	/// Creates a new DataFrame.
 	pub fn new(finished: bool, opcode: Opcode, data: Vec<u8>) -> DataFrame {
 		DataFrame {
 			finished: finished,
 			reserved: [false; 3],
 			opcode: opcode,
-			data: data,
+			data: Cow::Owned(data),
 		}
 	}
 }
