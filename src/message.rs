@@ -28,7 +28,7 @@ pub enum Message {
     Pong(Vec<u8>),
 }
 
-impl<'d> ws::Message<DataFrame<'d>> for Message {
+impl<'d> ws::Message<'d, DataFrame<'d>> for Message {
     type DataFrameIterator = Take<Repeat<DataFrame<'d>>>;
     /// Attempt to form a message from a series of data frames
     fn from_dataframes(frames: Vec<DataFrame>) -> WebSocketResult<Message> {
@@ -85,22 +85,21 @@ impl<'d> ws::Message<DataFrame<'d>> for Message {
     }
 
     /// Turns this message into an iterator over references to dataframes
-    fn iter(&self) -> Self::DataFrameIterator {
-        unimplemented!();
-//        // Just return a single data frame representing this message.
-//        let (opcode, data) = match self {
-//            &Message::Text(ref payload)   => (Opcode::Text,   payload.as_bytes()),
-//            &Message::Binary(ref payload) => (Opcode::Binary, &payload[..]),
-//            &Message::Ping(ref payload)   => (Opcode::Ping,   &payload[..]),
-//            &Message::Pong(ref payload)   => (Opcode::Pong,   &payload[..]),
-//            &Message::Close(payload)      => (Opcode::Close,
-//                match payload {
-//                    Some(payload) => unimplemented!(), //payload.into_bytes().unwrap(),
-//                    None          => &[0 as u8; 0] as &[u8],
-//            }),
-//        };
-//        let dataframe = DataFrame::new(true, opcode, Cow::Borrowed(data));
-//        repeat(dataframe).take(1)
+    fn iter(&'d self) -> Self::DataFrameIterator {
+        // Just return a single data frame representing this message.
+        let (opcode, data) = match self {
+            &Message::Text(ref payload)   => (Opcode::Text,   payload.as_bytes()),
+            &Message::Binary(ref payload) => (Opcode::Binary, &payload[..]),
+            &Message::Ping(ref payload)   => (Opcode::Ping,   &payload[..]),
+            &Message::Pong(ref payload)   => (Opcode::Pong,   &payload[..]),
+            &Message::Close(ref payload)  => (Opcode::Close,
+                match payload {
+                    &Some(ref payload) => payload.into_bytes().unwrap(),
+                    &None              => &[0 as u8; 0] as &[u8],
+            }),
+        };
+        let dataframe = DataFrame::new(true, opcode, Cow::Borrowed(data));
+        repeat(dataframe).take(1)
     }
 }
 

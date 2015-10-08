@@ -97,7 +97,7 @@ impl<'r, 'd> Client<DataFrame<'d>, Sender<WebSocketStream>, Receiver<'r, WebSock
 	}
 }
 
-impl<'r, D: 'r, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
+impl<'r, D: 'r, S: ws::Sender<'r, D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
 	/// Creates a Client from the given Sender and Receiver.
 	///
 	/// Essentially the opposite of `Client.split()`.
@@ -113,8 +113,8 @@ impl<'r, D: 'r, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
         self.sender.send_dataframe(dataframe)
 	}
 	/// Sends a single message to the remote endpoint.
-	pub fn send_message<M>(&mut self, message: &M) -> WebSocketResult<()>
-	where M: ws::Message<D> {
+	pub fn send_message<M>(&mut self, message: &'r M) -> WebSocketResult<()>
+	where M: ws::Message<'r, D> {
         self.sender.send_message(message)
 	}
 	/// Reads a single data frame from the remote endpoint.
@@ -127,7 +127,7 @@ impl<'r, D: 'r, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
 	}
 	/// Reads a single message from this receiver.
 	pub fn recv_message<M, I>(&'r mut self) -> WebSocketResult<M>
-		where M: ws::Message<D, DataFrameIterator = I>, I: Iterator<Item = D> {
+		where M: ws::Message<'r, D, DataFrameIterator = I>, I: Iterator<Item = D> {
 		
 		self.receiver.recv_message()
 	}
@@ -174,7 +174,7 @@ impl<'r, D: 'r, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
 	///# }
 	///```
 	pub fn incoming_messages<M>(&'r mut self) -> MessageIterator<'r, R, D, M>
-		where M: ws::Message<D> {
+		where M: ws::Message<'r, D> {
 		
 		self.receiver.incoming_messages()
 	}

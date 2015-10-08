@@ -6,13 +6,14 @@ use ws::Message;
 use result::WebSocketResult;
 
 /// A trait for sending data frames and messages.
-pub trait Sender<D> {
+pub trait Sender<'d, D>
+where D: 'd {
 	/// Sends a single data frame using this sender.
 	fn send_dataframe(&mut self, dataframe: &D) -> WebSocketResult<()>;
 
 	/// Sends a single message using this sender.
-	fn send_message<M>(&mut self, message: &M) -> WebSocketResult<()>
-    where M: Message<D> {
+	fn send_message<M>(&mut self, message: &'d M) -> WebSocketResult<()>
+    where M: Message<'d, D> {
 		for ref dataframe in message.iter() {
 			try!(self.send_dataframe(dataframe));
 		}
