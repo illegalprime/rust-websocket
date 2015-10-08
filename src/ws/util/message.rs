@@ -15,7 +15,7 @@ pub fn message_from_data(opcode: Opcode, data: Vec<u8>) -> WebSocketResult<Messa
 			if data.len() > 0 {				
 				let status_code = try!((&data[..]).read_u16::<BigEndian>());
 				let reason = try!(bytes_to_string(&data[2..]));
-				let close_data = CloseData::new(status_code, reason);
+				let close_data = CloseData::new(status_code, reason).unwrap();
 				Message::Close(Some(close_data))
 			}
 			else {

@@ -73,8 +73,8 @@ impl<'d> ws::Message<'d, DataFrame<'d>> for Message {
             Message::Close(payload) => (
                     Opcode::Close,
                     match payload {
-                        Some(payload) => { payload.into_bytes().unwrap() }
-                        None => { Vec::new() }
+                        Some(payload) => payload.into_bytes(),
+                        None => Vec::new(),
                     }
             ),
             Message::Ping(payload) => (Opcode::Ping, payload),
@@ -94,7 +94,7 @@ impl<'d> ws::Message<'d, DataFrame<'d>> for Message {
             &Message::Pong(ref payload)   => (Opcode::Pong,   &payload[..]),
             &Message::Close(ref payload)  => (Opcode::Close,
                 match payload {
-                    &Some(ref payload) => payload.into_bytes().unwrap(),
+                    &Some(ref payload) => payload.as_bytes(),
                     &None              => &[0 as u8; 0] as &[u8],
             }),
         };
@@ -110,23 +110,37 @@ pub struct CloseData {
     pub status_code: u16,
     /// The reason-phrase of the CloseData
     pub reason: String,
+    /// An encoded form of the close data
+    encoded: Vec<u8>,
 }
 
 impl CloseData {
     /// Create a new CloseData object
-    pub fn new(status_code: u16, reason: String) -> CloseData {
-        CloseData {
+    pub fn new(status_code: u16, reason: String) -> io::Result<CloseData> {
+        let encoded = try!(CloseData::encode(status_code, &reason));
+        Ok(CloseData {
+            encoded: encoded,
             status_code: status_code,
             reason: reason,
-        }
+        })
     }
-    /// Convert this into a vector of bytes
-    pub fn into_bytes(self) -> io::Result<Vec<u8>> {
+
+    fn encode(code: u16, reason: &String) -> io::Result<Vec<u8>> {
         let mut buf = Vec::new();
-        try!(buf.write_u16::<BigEndian>(self.status_code));
-        for i in self.reason.as_bytes().iter() {
+        try!(buf.write_u16::<BigEndian>(code));
+        for i in reason.as_bytes().iter() {
             buf.push(*i);
         }
         Ok(buf)
+    }
+
+    /// Convert this into a vector of bytes
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.encoded[..]
+    }
+
+    /// Move out of this struct into a vector of bytes
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.encoded
     }
 }
