@@ -6,7 +6,6 @@
 use std::marker::PhantomData;
 use ws::Message;
 use result::WebSocketResult;
-use dataframe::DataFrame;
 
 /// A trait for receiving data frames and messages.
 pub trait Receiver<'d, D: 'd>: Sized {
@@ -51,14 +50,13 @@ pub struct DataFrameIterator<'a, R, D>
 }
 
 impl<'a, R, D> Iterator for DataFrameIterator<'a, R, D>
-	where R: 'a + Receiver<'a, D> {
+	where R: for<'b>  Receiver<'b, D> {
 
 	type Item = WebSocketResult<D>;
 
 	/// Get the next data frame from the receiver. Always returns `Some`.
 	fn next(&mut self) -> Option<WebSocketResult<D>> {
-        unimplemented!();
-		// Some(self.inner.recv_dataframe())
+		 Some(self.inner.recv_dataframe())
 	}
 }
 
@@ -72,13 +70,12 @@ pub struct MessageIterator<'a, R, D, M>
 }
 
 impl<'a, R, D, M, I> Iterator for MessageIterator<'a, R, D, M>
-	where R: 'a + Receiver<'a, D>, M: Message<D, DataFrameIterator = I>, I: Iterator<Item = D> {
+	where R: for<'b> Receiver<'b, D>, M: Message<D, DataFrameIterator = I>, I: Iterator<Item = D> {
 	
 	type Item = WebSocketResult<M>;
 	
 	/// Get the next message from the receiver. Always returns `Some`.
 	fn next(&mut self) -> Option<WebSocketResult<M>> {
-        unimplemented!();
-		//Some(self.inner.recv_message())
+		Some(self.inner.recv_message())
 	}
 }

@@ -39,7 +39,7 @@ impl<'r, R: Read> ws::Receiver<'r, DataFrame<'r>> for Receiver<'r, R> {
 	/// Returns the data frames that constitute one message.
 	fn recv_message_dataframes(&'r mut self) -> WebSocketResult<Vec<DataFrame<'r>>> {
 		let mut finished = if self.buffer.is_empty() {
-			let first = try!(self.recv_dataframe());
+			let first = try!(read_dataframe(&mut self.inner, true));
 			
 			if first.opcode == Opcode::Continuation {
 				return Err(WebSocketError::ProtocolError(
@@ -56,7 +56,7 @@ impl<'r, R: Read> ws::Receiver<'r, DataFrame<'r>> for Receiver<'r, R> {
 		};
 		
 		while !finished {
-			let next = try!(self.recv_dataframe());
+			let next = try!(read_dataframe(&mut self.inner, true));
 			finished = next.finished;
 			
 			match next.opcode as u8 {

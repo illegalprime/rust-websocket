@@ -6,6 +6,8 @@
 /// Masking/unmasking is done when sending and receiving the data frame,
 use std::borrow::Cow;
 
+/// Holds the contents of a single packet of data from
+/// which an entire Message can be constructed
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataFrame<'a> {
 	/// Whether or no this constitutes the end of a message

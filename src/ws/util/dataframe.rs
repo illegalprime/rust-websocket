@@ -39,7 +39,7 @@ pub fn write_dataframe<W>(writer: &mut W, mask: bool, dataframe: &DataFrame) -> 
 }
 
 /// Reads a DataFrame from a Reader.
-pub fn read_dataframe<'r, R>(reader: &'r mut R, should_be_masked: bool) -> WebSocketResult<DataFrame<'r>> 
+pub fn read_dataframe<'r, 'd, R>(reader: &'r mut R, should_be_masked: bool) -> WebSocketResult<DataFrame<'d>> 
 	where R: Read {
 
 	let header = try!(dfh::read_header(reader));

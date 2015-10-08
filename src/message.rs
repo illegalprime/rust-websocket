@@ -1,7 +1,6 @@
 //! Module containing the default implementation for messages.
 
 use std::io;
-use std::borrow::Cow;
 use std::iter::{Take, Repeat, repeat};
 use result::{WebSocketResult, WebSocketError};
 use dataframe::{DataFrame, Opcode};
@@ -38,7 +37,7 @@ impl<'d> ws::Message<DataFrame<'d>> for Message {
 			"No dataframes provided".to_string()
 		)));
 		
-		let mut data = first.data.into_owned();
+		let mut data = first.data.clone().into_owned();
 		
 		if first.reserved != [false; 3] {
 			return Err(WebSocketError::ProtocolError(
