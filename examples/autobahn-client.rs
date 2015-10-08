@@ -41,24 +41,24 @@ fn main() {
 				Ok(message) => message,
 				Err(e) => {
 					println!("Error: {:?}", e);
-					let _ = sender.send_message(Message::Close(None));
+					let _ = sender.send_message(&Message::Close(None));
 					break;
 				}
 			};
 			
 			match message {
 				Message::Text(data) => {
-					sender.send_message(Message::Text(data)).unwrap();
+					sender.send_message(&Message::Text(data)).unwrap();
 				}
 				Message::Binary(data) => {
-					sender.send_message(Message::Binary(data)).unwrap();
+					sender.send_message(&Message::Binary(data)).unwrap();
 				}
 				Message::Close(_) => {
-					let _ = sender.send_message(Message::Close(None));
+					let _ = sender.send_message(&Message::Close(None));
 					break;
 				}
 				Message::Ping(data) => {
-					sender.send_message(Message::Pong(data)).unwrap();
+					sender.send_message(&Message::Pong(data)).unwrap();
 				}
 				_ => (),
 			}
@@ -91,7 +91,7 @@ fn get_case_count(addr: String) -> usize {
 			Ok(message) => message,
 			Err(e) => {
 				println!("Error: {:?}", e);
-				let _ = sender.send_message(Message::Close(Some(CloseData::new(1002, "".to_string()))));
+				let _ = sender.send_message(&Message::Close(Some(CloseData::new(1002, "".to_string()).unwrap())));
 				break;
 			}
 		};
@@ -101,11 +101,11 @@ fn get_case_count(addr: String) -> usize {
 				println!("Will run {} cases...", count);
 			}
 			Message::Close(_) => {
-				let _ = sender.send_message(Message::Close(None));
+				let _ = sender.send_message(&Message::Close(None));
 				break;
 			}
 			Message::Ping(data) => {
-				sender.send_message(Message::Pong(data)).unwrap();
+				sender.send_message(&Message::Pong(data)).unwrap();
 			}
 			_ => (),
 		}
@@ -135,19 +135,19 @@ fn update_reports(addr: String, agent: &str) {
 			Ok(message) => message,
 			Err(e) => {
 				println!("Error: {:?}", e);
-				let _ = sender.send_message(Message::Close(None));
+				let _ = sender.send_message(&Message::Close(None));
 				return;
 			}
 		};
 		match message {
 			Message::Close(_) => {
-				let _ = sender.send_message(Message::Close(None));
+				let _ = sender.send_message(&Message::Close(None));
 				println!("Reports updated.");
 				println!("Test suite finished!");
 				return;
 			}
 			Message::Ping(data) => {
-				sender.send_message(Message::Pong(data)).unwrap();
+				sender.send_message(&Message::Pong(data)).unwrap();
 			}
 			_ => (),
 		}

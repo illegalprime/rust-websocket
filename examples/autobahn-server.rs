@@ -20,21 +20,21 @@ fn main() {
 					Ok(message) => message,
 					Err(e) => {
 						println!("{:?}", e);
-						let _ = sender.send_message( Message::Close(None));
+						let _ = sender.send_message(&Message::Close(None));
 						return;
 					}
 				};
 				
 				match message {
-					Message::Text(data) => sender.send_message(Message::Text(data)).unwrap(),
-					Message::Binary(data) => sender.send_message(Message::Binary(data)).unwrap(),
+					Message::Text(data) => sender.send_message(&Message::Text(data)).unwrap(),
+					Message::Binary(data) => sender.send_message(&Message::Binary(data)).unwrap(),
 					Message::Close(_) => {
-						let _ = sender.send_message( Message::Close(None));
+						let _ = sender.send_message(&Message::Close(None));
 						return;
 					}
 					Message::Ping(data) => {
 						let message = Message::Pong(data);
-						sender.send_message(message).unwrap();
+						sender.send_message(&message).unwrap();
 					}
 					_ => (),
 				}

@@ -56,7 +56,7 @@ fn main() {
 			println!("Connection from {}", ip);
 			
 			let message = Message::Text("Hello".to_string());
-			client.send_message(message).unwrap();
+			client.send_message(&message).unwrap();
 			
 			let (mut sender, mut receiver) = client.split();
 			
@@ -66,15 +66,15 @@ fn main() {
 				match message {
 					Message::Close(_) => {
 						let message = Message::Close(None);
-						sender.send_message(message).unwrap();
+						sender.send_message(&message).unwrap();
 						println!("Client {} disconnected", ip);
 						return;
 					}
 					Message::Ping(data) => {
 						let message = Message::Pong(data);
-						sender.send_message(message).unwrap();
+						sender.send_message(&message).unwrap();
 					}
-					_ => sender.send_message(message).unwrap(),
+					_ => sender.send_message(&message).unwrap(),
 				}
 			}
 		});
