@@ -50,13 +50,14 @@ pub struct DataFrameIterator<'a, R, D>
 }
 
 impl<'a, R, D> Iterator for DataFrameIterator<'a, R, D>
-	where R: for<'b> Receiver<'b, D> {
+	where R: Receiver<'a, D> {
 
 	type Item = WebSocketResult<D>;
 
 	/// Get the next data frame from the receiver. Always returns `Some`.
 	fn next(&mut self) -> Option<WebSocketResult<D>> {
-		 Some(self.inner.recv_dataframe())
+        unimplemented!();
+		// Some(self.inner.recv_dataframe())
 	}
 }
 
@@ -70,12 +71,13 @@ pub struct MessageIterator<'a, R, D, M>
 }
 
 impl<'a, R, D, M, I> Iterator for MessageIterator<'a, R, D, M>
-	where R: for<'b> Receiver<'b, D>, for<'b> M: Message<'b, D, DataFrameIterator = I>, I: Iterator<Item = D> {
-	
+	where R: Receiver<'a, D>, M: Message<'a, D, DataFrameIterator = I>, I: Iterator<Item = D> {
+
 	type Item = WebSocketResult<M>;
-	
+
 	/// Get the next message from the receiver. Always returns `Some`.
 	fn next(&mut self) -> Option<WebSocketResult<M>> {
-		Some(self.inner.recv_message())
+        unimplemented!();
+		// Some(self.inner.recv_message())
 	}
 }
