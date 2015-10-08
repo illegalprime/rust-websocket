@@ -17,17 +17,17 @@ pub struct DataFrame<'a> {
 	/// The opcode associated with this data frame
 	pub opcode: Opcode,
 	/// The payload associated with this data frame
-	pub data: Cow<'a, Vec<u8>>,
+	pub data: Cow<'a, [u8]>,
 }
 
 impl<'a> DataFrame<'a> {
 	/// Creates a new DataFrame.
-	pub fn new(finished: bool, opcode: Opcode, data: Vec<u8>) -> Self {
+	pub fn new(finished: bool, opcode: Opcode, data: Cow<'a, [u8]>) -> Self {
 		DataFrame {
 			finished: finished,
 			reserved: [false; 3],
 			opcode: opcode,
-			data: Cow::Owned(data),
+			data: data,
 		}
 	}
 }

@@ -50,7 +50,7 @@ pub struct DataFrameIterator<'a, R, D>
 }
 
 impl<'a, R, D> Iterator for DataFrameIterator<'a, R, D>
-	where R: for<'b>  Receiver<'b, D> {
+	where R: for<'b> Receiver<'b, D> {
 
 	type Item = WebSocketResult<D>;
 
