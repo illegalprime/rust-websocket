@@ -12,8 +12,8 @@ where D: 'd {
 	fn send_dataframe(&mut self, dataframe: &D) -> WebSocketResult<()>;
 
 	/// Sends a single message using this sender.
-	fn send_message<M>(&mut self, message: &'d M) -> WebSocketResult<()>
-    where M: Message<'d, D> {
+	fn send_message<'m, M>(&mut self, message: &'m M) -> WebSocketResult<()>
+    where M: Message<'m, D> {
 		for ref dataframe in message.iter() {
 			try!(self.send_dataframe(dataframe));
 		}
