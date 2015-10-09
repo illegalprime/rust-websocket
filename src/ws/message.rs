@@ -14,5 +14,5 @@ where D: 'd {
 	/// Turns this message into an iterator over data frames
 	fn into_iter(self) -> Self::DataFrameIterator;
     /// Turns this message into an iterator over references to data frames
-    fn iter(&'d self) -> Self::DataFrameIterator;
+    fn iter(&self) -> Self::DataFrameIterator;
 }

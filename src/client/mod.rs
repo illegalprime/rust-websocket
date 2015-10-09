@@ -97,7 +97,7 @@ impl<'r, 'd> Client<DataFrame<'d>, Sender<WebSocketStream>, Receiver<'r, WebSock
     }
 }
 
-impl<'r, D: 'r, S: ws::Sender<'r, D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
+impl<'r, D, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
     /// Creates a Client from the given Sender and Receiver.
     ///
     /// Essentially the opposite of `Client.split()`.
@@ -113,8 +113,8 @@ impl<'r, D: 'r, S: ws::Sender<'r, D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
         self.sender.send_dataframe(dataframe)
     }
     /// Sends a single message to the remote endpoint.
-    pub fn send_message<'m, M>(&mut self, message: &'m M) -> WebSocketResult<()>
-    where M: ws::Message<'m, D> {
+    pub fn send_message<'m, M>(&mut self, message: &M) -> WebSocketResult<()>
+    where M: ws::Message<'m, D>, D: 'm {
         self.sender.send_message(message)
     }
     /// Reads a single data frame from the remote endpoint.
