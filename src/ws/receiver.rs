@@ -10,9 +10,9 @@ use result::WebSocketResult;
 /// A trait for receiving data frames and messages.
 pub trait Receiver<'d, D: 'd>: Sized {
 	/// Reads a single data frame from this receiver.
-	fn recv_dataframe(&'d mut self) -> WebSocketResult<D>;
+	fn recv_dataframe(&mut self) -> WebSocketResult<D>;
 	/// Returns the data frames that constitute one message.
-	fn recv_message_dataframes(&'d mut self) -> WebSocketResult<Vec<D>>;
+	fn recv_message_dataframes(&mut self) -> WebSocketResult<Vec<D>>;
 
 	/// Returns an iterator over incoming data frames.
 	fn incoming_dataframes(&'d mut self) -> DataFrameIterator<'d, Self, D> {
@@ -22,8 +22,8 @@ pub trait Receiver<'d, D: 'd>: Sized {
 		}
 	}
 	/// Reads a single message from this receiver.
-	fn recv_message<M, I>(&'d mut self) -> WebSocketResult<M>
-		where M: Message<'d, D, DataFrameIterator = I>, I: Iterator<Item = D> {
+	fn recv_message<'m, M, I>(&mut self) -> WebSocketResult<M>
+		where M: Message<'m, D, DataFrameIterator = I>, I: Iterator<Item = D>, D: 'm {
 
 		let dataframes = try!(self.recv_message_dataframes());
 		Message::from_dataframes(dataframes)

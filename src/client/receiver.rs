@@ -35,12 +35,12 @@ impl<'a, R> Receiver<'a, R> {
 
 impl<'r, R: Read> ws::Receiver<'r, DataFrame<'r>> for Receiver<'r, R> {
     /// Reads a single data frame from the remote endpoint.
-    fn recv_dataframe(&'r mut self) -> WebSocketResult<DataFrame<'r>> {
+    fn recv_dataframe(&mut self) -> WebSocketResult<DataFrame<'r>> {
         read_dataframe(&mut self.inner, false)
     }
 
     /// Returns the data frames that constitute one message.
-    fn recv_message_dataframes(&'r mut self) -> WebSocketResult<Vec<DataFrame<'r>>> {
+    fn recv_message_dataframes(&mut self) -> WebSocketResult<Vec<DataFrame<'r>>> {
         let mut finished = if self.buffer.is_empty() {
             let first = try!(read_dataframe(&mut self.inner, false));
 
