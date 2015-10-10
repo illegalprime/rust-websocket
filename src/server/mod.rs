@@ -39,7 +39,7 @@ pub mod receiver;
 ///		   let mut client = response.send().unwrap(); // Send the response
 ///
 ///		   let message = Message::Text("Hello, client!".to_string());
-///		   let _ = client.send_message(message);
+///		   let _ = client.send_message(&message);
 ///
 ///		   // ...
 ///    });
@@ -71,7 +71,7 @@ pub mod receiver;
 ///		   let mut client = response.send().unwrap(); // Send the response
 ///
 ///		   let message = Message::Text("Hello, client!".to_string());
-///		   let _ = client.send_message(message);
+///		   let _ = client.send_message(&message);
 ///
 ///		   // ...
 ///    });

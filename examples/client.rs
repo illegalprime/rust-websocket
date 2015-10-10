@@ -49,18 +49,18 @@ fn main() {
 			};
 			match message {
 				Message::Close(_) => {
-					let _ = sender.send_message(message);
+					let _ = sender.send_message(&message);
 					// If it's a close message, just send it and then return.
 					return;
 				}
 				_ => (),
 			}
 			// Send the message
-			match sender.send_message(message) {
+			match sender.send_message(&message) {
 				Ok(()) => (),
 				Err(e) => {
 					println!("Send Loop: {:?}", e);
-					let _ = sender.send_message(Message::Close(None));
+					let _ = sender.send_message(&Message::Close(None));
 					return;
 				}
 			}

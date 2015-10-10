@@ -53,7 +53,7 @@ pub mod response;
 ///let mut client = response.begin(); // Get a Client
 ///
 ///let message = Message::Text("Hello, World!".to_string());
-///client.send_message(message).unwrap(); // Send message
+///client.send_message(&message).unwrap(); // Send message
 ///# }
 ///```
 pub struct Client<D, S, R> {
@@ -169,7 +169,7 @@ impl<'r, D, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
     ///let (mut sender, mut receiver) = client.split(); // Split the Client
     ///for message in receiver.incoming_messages::<Message>() {
     ///    // Echo the message back
-    ///    sender.send_message(message.unwrap()).unwrap();
+    ///    sender.send_message(&message.unwrap()).unwrap();
     ///}
     ///# }
     ///```
@@ -220,7 +220,7 @@ impl<'r, D, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
     ///});
     ///
     ///let message = Message::Text("Hello, World!".to_string());
-    ///sender.send_message(message).unwrap();
+    ///sender.send_message(&message).unwrap();
     ///# }
     ///```
     pub fn split(self) -> (S, R) {
