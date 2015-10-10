@@ -214,6 +214,7 @@ impl<'r, D, S: ws::Sender<D>, R: ws::Receiver<'r, D>> Client<D, S, R> {
     ///let (mut sender, mut receiver) = client.split();
     ///
     ///thread::spawn(move || {
+    ///    let mut receiver = receiver;
     ///    for message in receiver.incoming_messages::<Message>() {
     ///        println!("Recv: {:?}", message.unwrap());
     ///    }
