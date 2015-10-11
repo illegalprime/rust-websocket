@@ -12,7 +12,7 @@ pub trait Sender<D> {
 
 	/// Sends a single message using this sender.
 	fn send_message<'m, M>(&mut self, message: &M) -> WebSocketResult<()>
-    where M: Message<'m, D>, D: 'm {
+    where M: Message<'m, D> {
 		for ref dataframe in message.iter() {
 			try!(self.send_dataframe(dataframe));
 		}

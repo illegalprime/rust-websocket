@@ -37,6 +37,8 @@ fn main() {
 			client.send_message(&message).unwrap();
 			
 			let (mut sender, mut receiver) = client.split();
+
+			sender.send_message(&message).unwrap();
 			
 			for message in receiver.incoming_messages() {
 				let message = message.unwrap();
