@@ -11,7 +11,7 @@ pub trait Sender<D> {
 	fn send_dataframe(&mut self, dataframe: &D) -> WebSocketResult<()>;
 
 	/// Sends a single message using this sender.
-	fn send_message<'m, M>(&mut self, message: &M) -> WebSocketResult<()>
+	fn send_message<'m, M>(&mut self, message: &'m M) -> WebSocketResult<()>
     where M: Message<'m, D>, D: 'm {
 		for ref dataframe in message.iter() {
 			try!(self.send_dataframe(dataframe));

@@ -34,9 +34,17 @@ fn main() {
 			println!("Connection from {}", ip);
 			
 			let message = Message::Text("Hello".to_string());
+
+            if let Ok(Message::Text(txt)) = client.recv_message() {
+                println!("Message: {}", txt);
+            }
+
 			client.send_message(&message).unwrap();
 			
 			let (mut sender, mut receiver) = client.split();
+
+            sender.send_message(&message).ok();
+            sender.send_message(&message).ok();
 			
 			for message in receiver.incoming_messages() {
 				let message = message.unwrap();

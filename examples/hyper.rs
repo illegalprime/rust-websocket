@@ -60,6 +60,8 @@ fn main() {
 
             let (mut sender, mut receiver) = client.split();
 
+            sender.send_message(&message).ok();
+
             for message in receiver.incoming_messages() {
                 let message = message.unwrap();
 
