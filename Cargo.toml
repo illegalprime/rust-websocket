@@ -26,6 +26,8 @@ bitflags = "*"
 rand = "*"
 byteorder = "*"
 net2 = "*"
+mio = { version = "*", optional = true }
 
 [features]
 nightly = ["hyper/nightly"]
+evented = ["mio"]
