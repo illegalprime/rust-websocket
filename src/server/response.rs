@@ -1,6 +1,7 @@
 //! Struct for server-side WebSocket response.
 use std::io::{Read, Write};
 
+use hyper::buffer::BufReader;
 use hyper::status::StatusCode;
 use hyper::version::HttpVersion;
 use hyper::header::Headers;
@@ -141,7 +142,7 @@ impl<R: Read, W: Write> Response<R, W> {
 		try!(write!(self.get_mut_writer(), "{}\r\n", headers));
 		let (reader, writer) = self.into_inner();
 		let sender = Sender::new(writer);
-		let receiver = Receiver::new(reader);
+		let receiver = Receiver::new(BufReader::new(reader));
 		Ok(Client::new(sender, receiver))
 	}
 }
