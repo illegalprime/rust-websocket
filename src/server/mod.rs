@@ -1,4 +1,7 @@
 //! Provides an implementation of a WebSocket server
+#[cfg(feature = "evented")]
+extern crate mio;
+
 use std::net::{SocketAddr, ToSocketAddrs, TcpListener};
 use std::net::Shutdown;
 use std::io::{Read, Write};
@@ -15,6 +18,15 @@ use openssl::ssl::SslStream;
 
 pub mod request;
 pub mod response;
+
+#[cfg(feature = "evented")]
+use self::mio::tcp::TcpStream as EventedTcpStream;
+
+#[cfg(feature = "evented")]
+use self::mio::{Evented, Selector, Token, EventSet, PollOpt};
+
+#[cfg(feature = "evented")]
+use std::io::Result as IoResult;
 
 /// Represents a WebSocket server which can work with either normal (non-secure) connections, or secure WebSocket connections.
 ///
@@ -159,5 +171,21 @@ impl Connection<WebSocketStream, WebSocketStream> {
     /// return value.
     pub fn shutdown(&mut self, how: Shutdown) -> io::Result<()> {
         self.0.shutdown(how)
+    }
+}
+
+// TODO: Maybe this should be a client?
+#[cfg(feature = "evented")]
+impl Evented for Connection<EventedTcpStream, EventedTcpStream> {
+    fn register(&self, selector: &mut Selector, token: Token, interest: EventSet, opts: PollOpt) -> IoResult<()> {
+        self.0.register(selector, token, interest, opts)
+    }
+
+    fn reregister(&self, selector: &mut Selector, token: Token, interest: EventSet, opts: PollOpt) -> IoResult<()> {
+        self.0.reregister(selector, token, interest, opts)
+    }
+
+    fn deregister(&self, selector: &mut Selector) -> IoResult<()> {
+        self.0.deregister(selector)
     }
 }
