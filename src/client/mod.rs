@@ -1,4 +1,6 @@
 //! Contains the WebSocket client.
+#[cfg(feature = "evented")]
+extern crate mio;
 
 use std::net::TcpStream;
 use std::marker::PhantomData;
@@ -24,6 +26,15 @@ pub mod sender;
 pub mod receiver;
 pub mod request;
 pub mod response;
+
+#[cfg(feature = "evented")]
+use self::mio::tcp::TcpStream as EventedTcpStream;
+
+#[cfg(feature = "evented")]
+use self::mio::{Evented, Selector, Token, EventSet, PollOpt};
+
+#[cfg(feature = "evented")]
+use std::net::SocketAddr;
 
 /// Represents a WebSocket client, which can send and receive messages/data frames.
 ///
@@ -114,6 +125,49 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
     /// return immediately with an appropriate value.
     pub fn shutdown(&mut self) -> IoResult<()> {
         self.receiver.shutdown_all()
+    }
+}
+
+#[cfg(feature = "evented")]
+impl Client<DataFrame, Sender<EventedTcpStream>, Receiver<EventedTcpStream>> {
+    /// Connect to a given `ws://` url.
+	/// A connection is established, however the request is not sent to
+	/// the server until a call to ```send()```.
+    pub fn connect(addr: &SocketAddr, resource: &str) -> WebSocketResult<Request<EventedTcpStream, EventedTcpStream>> {
+        // TODO: Add SSL Support
+        let connection = try!(EventedTcpStream::connect(addr));
+        // TODO: SOOO MUCH CLONING
+        let ip = match addr {
+            &SocketAddr::V4(ref ip) => format!("{}", ip),
+            &SocketAddr::V6(ref ip) => format!("{}", ip),
+        };
+        let components = (ip, addr.port(), resource.to_string(), false);
+        Request::new(components, try!(connection.try_clone()), connection)
+    }
+
+    /// Gets a reference to the underlying TCP Stream
+    pub fn stream(&self) -> &EventedTcpStream {
+        self.receiver.stream()
+    }
+
+    /// Gets a mutable reference to the underlying TCP Stream
+    pub fn stream_mut(&mut self) -> &mut EventedTcpStream {
+        self.receiver.stream_mut()
+    }
+}
+
+#[cfg(feature = "evented")]
+impl Evented for Client<DataFrame, Sender<EventedTcpStream>, Receiver<EventedTcpStream>> {
+    fn register(&self, selector: &mut Selector, token: Token, interest: EventSet, opts: PollOpt) -> IoResult<()> {
+        self.receiver.register(selector, token, interest, opts)
+    }
+
+    fn reregister(&self, selector: &mut Selector, token: Token, interest: EventSet, opts: PollOpt) -> IoResult<()> {
+        self.receiver.reregister(selector, token, interest, opts)
+    }
+
+    fn deregister(&self, selector: &mut Selector) -> IoResult<()> {
+        self.receiver.deregister(selector)
     }
 }
 

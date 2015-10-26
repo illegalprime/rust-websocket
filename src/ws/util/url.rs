@@ -69,6 +69,13 @@ impl ToWebSocketUrlComponents for (UrlHost, u16, String, bool) {
 	}
 }
 
+impl ToWebSocketUrlComponents for (String, u16, String, bool) {
+    /// Convert a host (in a string), port, resource name and secure flag to WebSocket URL comps.
+    fn to_components(&self) -> WebSocketResult<(Host, String, bool)> {
+        (UrlHost::Domain(self.0.clone()), self.1, self.2.clone(), self.3).to_components()
+    }
+}
+
 impl<'a> ToWebSocketUrlComponents for (UrlHost, u16, &'a str, bool) {
 	/// Convert a Host, port, resource name and secure flag to WebSocket URL components.
 	fn to_components(&self) -> WebSocketResult<(Host, String, bool)> {
@@ -166,7 +173,7 @@ mod tests {
     #[test]
     fn test_parse_url_invalid_schemes_return_error() {
         let url = &mut url_for_test();
-        
+
         let invalid_schemes = &["http", "https", "gopher", "file", "ftp", "other"];
         for scheme in invalid_schemes {
             url.scheme = scheme.to_string();
@@ -180,11 +187,11 @@ mod tests {
             }
         }
     }
-    
+
     #[test]
     fn test_parse_url_valid_schemes_return_ok() {
         let url = &mut url_for_test();
-        
+
         let valid_schemes = &["ws", "wss"];
         for scheme in valid_schemes {
             url.scheme = scheme.to_string();
@@ -222,7 +229,7 @@ mod tests {
         };
         assert!(secure);
     }
-    
+
     #[test]
     fn test_parse_url_generates_proper_output() {
         let url = &url_for_test();
@@ -232,7 +239,7 @@ mod tests {
             Ok((host, resource, _)) => (host, resource),
             Err(e) => panic!(e),
         };
-        
+
         assert_eq!(host.hostname, "www.example.com".to_owned());
         assert_eq!(resource, "/some/path?a=b&c=d".to_owned());
 

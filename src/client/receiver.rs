@@ -1,4 +1,6 @@
 //! The default implementation of a WebSocket Receiver.
+#[cfg(feature = "evented")]
+extern crate mio;
 
 use std::io::Read;
 use std::io::Result as IoResult;
@@ -9,6 +11,12 @@ use result::{WebSocketResult, WebSocketError};
 use stream::WebSocketStream;
 use stream::Shutdown;
 use ws;
+
+#[cfg(feature = "evented")]
+use self::mio::tcp::TcpStream as EventedTcpStream;
+
+#[cfg(feature = "evented")]
+use self::mio::{Evented, Selector, Token, EventSet, PollOpt};
 
 /// A Receiver that wraps a Reader and provides a default implementation using
 /// DataFrames and Messages.
@@ -46,6 +54,34 @@ impl Receiver<WebSocketStream> {
     /// return immediately with an appropriate value.
     pub fn shutdown_all(&mut self) -> IoResult<()> {
         self.inner.get_mut().shutdown(Shutdown::Both)
+    }
+}
+
+#[cfg(feature = "evented")]
+impl Receiver<EventedTcpStream> {
+    /// Gets a reference to the underlying TCP Stream
+    pub fn stream(&self) -> &EventedTcpStream {
+        self.inner.get_ref()
+    }
+
+    /// Gets a mutable reference to the underlying TCP Stream
+    pub fn stream_mut(&mut self) -> &mut EventedTcpStream {
+        self.inner.get_mut()
+    }
+}
+
+#[cfg(feature = "evented")]
+impl Evented for Receiver<EventedTcpStream> {
+    fn register(&self, selector: &mut Selector, token: Token, interest: EventSet, opts: PollOpt) -> IoResult<()> {
+        self.inner.get_ref().register(selector, token, interest, opts)
+    }
+
+    fn reregister(&self, selector: &mut Selector, token: Token, interest: EventSet, opts: PollOpt) -> IoResult<()> {
+        self.inner.get_ref().reregister(selector, token, interest, opts)
+    }
+
+    fn deregister(&self, selector: &mut Selector) -> IoResult<()> {
+        self.inner.get_ref().deregister(selector)
     }
 }
 
