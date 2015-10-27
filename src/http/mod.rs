@@ -58,32 +58,43 @@ where R: Reader {
 
 // TODO: More impls of above for hyper like libs, like support the hyper::Request
 
-pub trait IntoWebSocket {
-    fn into_ws(self) -> Result<Connection, Self>;
-}
-
-impl IntoWebSocket for TcpStream {
-    fn into_ws(self) -> Result<Connection, Self> {
-        // TODO
+mod server {
+    // Maybe turn a rw stream into a into a ws connection
+    pub trait IntoWebSocket {
+        fn into_ws(self) -> Result<Connection, Self>;
     }
-}
 
-// TODO: One for mio as well
-
-impl<S> IntoWebSocket for S
-where S: Read + Write {
-    fn into_ws(self) -> Result<Connection, Self> {
-        // TODO
+    impl IntoWebSocket for TcpStream {
+        fn into_ws(self) -> Result<Connection, Self> {
+            // TODO
+        }
     }
-}
 
-impl<R, W> IntoWebSocket for (R, W)
-where R: Read,
-      W: Write
-{
-    fn into_ws(self) -> Result<Connection, Self> {
-        // TODO
+    // TODO: One for mio as well
+
+    // TODO: Maybe this should be removed since it will require splitting
+    // S into two Arc<Mutex<S>>? Better for people to clone it themselves.
+    // Also conflicts with TcpStream impl
+    impl<S> IntoWebSocket for S
+    where S: Read + Write {
+        fn into_ws(self) -> Result<Connection, Self> {
+            // TODO
+        }
     }
+
+    impl<R, W> IntoWebSocket for (R, W)
+    where R: Read,
+          W: Write
+    {
+        fn into_ws(self) -> Result<Connection, Self> {
+            // TODO
+        }
+    }
+
+    // TODO: More impls for hyper maybe?
 }
 
-// TODO: More impls for hyper maybe?
+mod client {
+    // TODO: Trait to turn a stream into a ws connection
+    // by initiating handshake
+}
