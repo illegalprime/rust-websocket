@@ -20,6 +20,24 @@ use dataframe::DataFrame;
 use ws::dataframe::DataFrame as DataFrameable;
 use ws;
 
+// TODO: Response should need to do
+// Create a handshake completion response
+// Create a failed response
+// Read data to make a response
+// Check if this is a handshake completion / failed response
+// This ws specific handshake stuff should be a trait only exposed
+// on the server server-side
+// The actualy struct should represent an HTTP Packet or something
+// TODO: The Request
+// Create an upgrade request
+// Read data into a request
+// Check if a request is an upgrade request
+// Should be trait exposed on the client-side
+
+// Maybe add helpers to turn requests into a WebSocket
+// connection if it is a correct thing. Maybe add a hyper feature to
+// integrate with it.
+
 /// Represents a WebSocket response.
 pub struct Response<R: Read, W: Write> {
 	/// The status of the response
