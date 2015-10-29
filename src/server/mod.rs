@@ -3,18 +3,14 @@ use std::net::{SocketAddr, ToSocketAddrs, TcpListener};
 use std::net::Shutdown;
 use std::io::{Read, Write};
 use std::io;
-pub use self::request::Request;
-pub use self::response::Response;
 pub use super::sender::Sender;
 pub use super::receiver::Receiver;
+pub use http::server::IntoWebSocket;
 
 use stream::WebSocketStream;
 
 use openssl::ssl::SslContext;
 use openssl::ssl::SslStream;
-
-pub mod request;
-pub mod response;
 
 /// Represents a WebSocket server which can work with either normal (non-secure) connections, or secure WebSocket connections.
 ///
@@ -140,18 +136,6 @@ impl<'a> Iterator for Server<'a> {
 
 /// Represents a connection to the server that has not been processed yet.
 pub struct Connection<R: Read, W: Write>(R, W);
-
-impl<R: Read, W: Write> Connection<R, W> {
-	/// Process this connection and read the request.
-	pub fn read_request(self) -> io::Result<Request<R, W>> {
-		match Request::read(self.0, self.1) {
-			Ok(result) => { Ok(result) },
-			Err(err) => {
-				Err(io::Error::new(io::ErrorKind::InvalidInput, err))
-			}
-		}
-	}
-}
 
 impl Connection<WebSocketStream, WebSocketStream> {
     /// Shuts down the currennt connection in the specified way.
