@@ -1,4 +1,5 @@
 //! Contains the WebSocket client.
+extern crate url;
 
 use std::net::TcpStream;
 use std::marker::PhantomData;
@@ -7,20 +8,17 @@ use std::io::Result as IoResult;
 use ws;
 use ws::util::url::ToWebSocketUrlComponents;
 use ws::receiver::{DataFrameIterator, MessageIterator};
-use result::WebSocketResult;
+use result::{WebSocketResult, WebSocketError, WSUrlErrorKind};
 use stream::WebSocketStream;
 use dataframe::DataFrame;
 use ws::dataframe::DataFrame as DataFrameable;
-
 use openssl::ssl::{SslContext, SslMethod, SslStream};
+use url::Url;
+use url::ParseError;
+use http::client::IntoWebSocket;
 
-pub use self::request::Request;
-pub use self::response::Response;
 pub use super::sender::Sender;
 pub use super::receiver::Receiver;
-
-pub mod request;
-pub mod response;
 
 /// Represents a WebSocket client, which can send and receive messages/data frames.
 ///
@@ -66,9 +64,8 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
 	///
 	/// A connection is established, however the request is not sent to
 	/// the server until a call to ```send()```.
-	pub fn connect<T: ToWebSocketUrlComponents>(components: T) -> WebSocketResult<Request<WebSocketStream, WebSocketStream>> {
-		let context = try!(SslContext::new(SslMethod::Tlsv1));
-		Client::connect_ssl_context(components, &context)
+	pub fn connect(url: &Url) -> WebSocketResult<Self> {
+		Client::create(url, None)
 	}
 	/// Connects to the specified wss:// URL using the given SSL context.
 	///
@@ -77,22 +74,49 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
 	///
 	/// A connection is established, however the request is not sent to
 	/// the server until a call to ```send()```.
-	pub fn connect_ssl_context<T: ToWebSocketUrlComponents>(components: T, context: &SslContext) -> WebSocketResult<Request<WebSocketStream, WebSocketStream>> {
-		let (host, resource_name, secure) = try!(components.to_components());
+	pub fn connect_ssl(url: &Url, ssl: &SslContext) -> WebSocketResult<Self> {
+		Client::create(url, Some(ssl))
+	}
 
-		let connection = try!(TcpStream::connect(
-			(&host.hostname[..], host.port.unwrap_or(if secure { 443 } else { 80 }))
-		));
-
-		let stream = if secure {
-			let sslstream = try!(SslStream::new(context, connection));
-			WebSocketStream::Ssl(sslstream)
-		}
-		else {
-			WebSocketStream::Tcp(connection)
+	// TODO: Don't hardcode "ws" and "wss"
+	fn create(url: &Url, ssl: Option<&SslContext>) -> WebSocketResult<Self> {
+		// Find the port number
+		let port = match url.port() {
+			Some(p) => p,
+			None => {
+				match &url.scheme as &str {
+					"wss" => 443u16,
+					"ws" => 80u16,
+					_ => return Err(WebSocketError::WebSocketUrlError(
+						WSUrlErrorKind::InvalidScheme
+					)),
+				}
+			}
 		};
 
-		Request::new((host, resource_name, secure), try!(stream.try_clone()), stream)
+		// Connect to the server
+		let stream = match url.domain() {
+			Some(host) => try!(TcpStream::connect((host, port))),
+			None => return Err(WebSocketError::UrlError(
+				ParseError::EmptyHost
+			)),
+		};
+
+		// Add SSL if necessary
+		let stream = if &url.scheme as &str == "wss" {
+			let sslstream = if let Some(ref context) = ssl {
+				SslStream::new(context, stream)
+			} else {
+				let context = try!(SslContext::new(SslMethod::Tlsv1));
+				SslStream::new(&context, stream)
+			};
+			WebSocketStream::Ssl(try!(sslstream))
+		} else {
+			WebSocketStream::Tcp(stream)
+		};
+
+		// Start handshake
+		stream.into_ws().map_err(|r| r.1)
 	}
 
     /// Shuts down the sending half of the client connection, will cause all pending
