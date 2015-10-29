@@ -40,6 +40,7 @@
 pub use self::message::Message;
 pub use self::sender::Sender;
 pub use self::receiver::Receiver;
+pub use self::dataframe::DataFrame;
 pub use self::receiver::{DataFrameIterator, MessageIterator};
 
 pub mod message;

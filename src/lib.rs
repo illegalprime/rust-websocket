@@ -68,3 +68,4 @@ pub mod stream;
 pub mod header;
 pub mod receiver;
 pub mod sender;
+pub mod http;
