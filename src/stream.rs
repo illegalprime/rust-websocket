@@ -1,8 +1,5 @@
 //! Provides the default stream type for WebSocket connections.
-extern crate net2;
-
 use std::io::{self, Read, Write};
-use self::net2::TcpStreamExt;
 use openssl::ssl::SslStream;
 
 pub use std::net::{SocketAddr, Shutdown, TcpStream};
@@ -48,6 +45,7 @@ impl WebSocketStream {
 			WebSocketStream::Ssl(ref mut inner) => inner.get_mut().peer_addr(),
 		}
 	}
+
 	/// See `TcpStream.local_addr()`.
 	pub fn local_addr(&mut self) -> io::Result<SocketAddr> {
 		match *self {
@@ -55,20 +53,7 @@ impl WebSocketStream {
 			WebSocketStream::Ssl(ref mut inner) => inner.get_mut().local_addr(),
 		}
 	}
-	/// See `TcpStream.set_nodelay()`.
-	pub fn set_nodelay(&mut self, nodelay: bool) -> io::Result<()> {
-		match *self {
-			WebSocketStream::Tcp(ref mut inner) => TcpStreamExt::set_nodelay(inner, nodelay),
-			WebSocketStream::Ssl(ref mut inner) => TcpStreamExt::set_nodelay(inner.get_mut(), nodelay),
-		}
-	}
-	/// See `TcpStream.set_keepalive()`.
-	pub fn set_keepalive(&mut self, delay_in_ms: Option<u32>) -> io::Result<()> {
-		match *self {
-			WebSocketStream::Tcp(ref mut inner) => TcpStreamExt::set_keepalive_ms(inner, delay_in_ms),
-			WebSocketStream::Ssl(ref mut inner) => TcpStreamExt::set_keepalive_ms(inner.get_mut(), delay_in_ms),
-		}
-	}
+
 	/// See `TcpStream.shutdown()`.
 	pub fn shutdown(&mut self, shutdown: Shutdown) -> io::Result<()> {
 		match *self {
@@ -76,11 +61,28 @@ impl WebSocketStream {
 			WebSocketStream::Ssl(ref mut inner) => inner.get_mut().shutdown(shutdown),
 		}
 	}
+
 	/// See `TcpStream.try_clone()`.
 	pub fn try_clone(&self) -> io::Result<WebSocketStream> {
 		Ok(match *self {
 			WebSocketStream::Tcp(ref inner) => WebSocketStream::Tcp(try!(inner.try_clone())),
 			WebSocketStream::Ssl(ref inner) => WebSocketStream::Ssl(try!(inner.try_clone())),
 		})
+	}
+
+	/// Get a reference to the inner TcpStream
+	pub fn get_ref(&self) -> &TcpStream {
+		match self {
+			&WebSocketStream::Tcp(ref t) => t,
+			&WebSocketStream::Ssl(ref s) => s.get_ref(),
+		}
+	}
+
+	/// Get a mutable reference to the inner TcpStream
+	pub fn get_mut(&mut self) -> &mut TcpStream {
+		match self {
+			&mut WebSocketStream::Tcp(ref mut t) => t,
+			&mut WebSocketStream::Ssl(ref mut s) => s.get_mut(),
+		}
 	}
 }
