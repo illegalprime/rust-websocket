@@ -1,84 +1,130 @@
 extern crate url;
 
 use std::io::{Read, Write};
+use std::io::Result as IoResult;
+use hyper::http::h1::Incoming;
+use hyper::http::h1::parse_response;
+use hyper::http::h1::parse_request;
+use hyper::http::RawStatus;
 use hyper::status::StatusCode;
 use hyper::version::HttpVersion;
 use hyper::header::Headers;
 use hyper::method::Method;
-pub use url::Url;
+use hyper::uri::RequestUri;
 
-pub type Request = Packet;
-pub type Response = Packet;
+use receiver::Receiver;
+use sender::Sender;
+use dataframe::DataFrame;
+use stream::WebSocketStream;
+use openssl::ssl::SslStream;
+use std::net::TcpStream;
 
-pub struct Packet {
-    destination: Url,
+pub use hyper::buffer::BufReader;
+pub use hyper::error::Result as HyperResult;
 
-    status: StatusCode,
-    method: Method,
-    version: HttpVersion,
+pub struct Message<S>(Incoming<S>);
+pub type Response = RawStatus;
+pub type Request = (Method, RequestUri);
 
-    headers: Headers,
-
-    payload: Option<Vec<u8>>,
+impl<S> Message<S> {
+    fn send<W>(&self, writer: &mut W) -> IoResult<()>
+    where W: Write {
+        unimplemented!();
+    }
 }
 
-impl Packet {
-    fn read<R>(reader: &R) -> Result<Packet>
+impl Message<Response> {
+    pub fn new<R>(reader: &mut BufReader<R>) -> HyperResult<Self>
     where R: Read {
-        // read packet
-    }
-
-    fn send<W>(&self, writer: &mut W) -> Result<()>
-    where W: Writer {
-
+        Ok(Message(
+            try!(parse_response(reader))
+        ))
     }
 }
 
-// NOTE: This is good for the internal imp
-// as well as providing a good way for users to check if they should switch to using ws
+impl Message<Request> {
+    fn new<R>(reader: &mut BufReader<R>) -> HyperResult<Self>
+    where R: Read {
+        Ok(Message(
+            try!(parse_request(reader))
+        ))
+    }
+}
+
+/// Take a message and determine if it is a WebSocket upgrade request.
 pub trait IsWsUpgrade {
     fn is_ws_upgrade(&self) -> bool;
 }
 
-impl IsWsUpgrade for Packet {
+impl IsWsUpgrade for Message<Request> {
     fn is_ws_upgrade(&self) -> bool {
-        // TODO
+        unimplemented!();
     }
 }
 
 impl<R> IsWsUpgrade for R
-where R: Reader {
+where R: Read {
     fn is_ws_upgrade(&self) -> bool {
-        // TODO
+        unimplemented!();
     }
 }
 
-// TODO: Some trait that returns bool to determine if this message constitutes a
-// successful handshake (response from the upgrade request)
+/// Take a message and determine if it constitutes a successful ws handshake,
+/// or a failed ws handshake. An error value is returned if this message was
+/// not a response to a ws handshake.
+pub trait WsHandshakeSucceeded {
+    fn handshake_succeeded(&self) -> Result<bool, ()>;
+}
 
-// TODO: More impls of above for hyper like libs, like support the hyper::Request
+impl WsHandshakeSucceeded for Message<Response> {
+    fn handshake_succeeded(&self) -> Result<bool, ()> {
+        unimplemented!();
+    }
+}
 
-mod server {
-    // Maybe turn a rw stream into a into a ws connection
-    pub trait IntoWebSocket {
-        fn into_ws(self) -> Result<Connection, Self>;
+impl<R> WsHandshakeSucceeded for R
+where R: Read {
+    fn handshake_succeeded(&self) -> Result<bool, ()> {
+        unimplemented!();
+    }
+}
+
+pub mod server {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use openssl::ssl::SslStream;
+    use stream::WebSocketStream;
+    use server::Connection;
+    use result::WebSocketError;
+    /// Turns a RW stream into a ws connection if the ws handshake was successful
+    /// Blocking read for a WebSocket
+    pub trait IntoWebSocket: Sized {
+        type Connection;
+
+        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)>;
     }
 
     impl IntoWebSocket for TcpStream {
-        fn into_ws(self) -> Result<Connection, Self> {
-            // TODO
+        type Connection = Connection<Self, Self>;
+
+        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+            unimplemented!();
         }
     }
 
-    // TODO: One for mio as well
+    impl IntoWebSocket for SslStream<TcpStream> {
+        type Connection = Connection<Self, Self>;
 
-    // TODO: Maybe this should be removed since it will require splitting
-    // S into two Arc<Mutex<S>>? Better for people to clone it themselves.
-    // Also conflicts with TcpStream impl
-    impl<S> IntoWebSocket for S
-    where S: Read + Write {
-        fn into_ws(self) -> Result<Connection, Self> {
-            // TODO
+        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+            unimplemented!();
+        }
+    }
+
+    impl IntoWebSocket for WebSocketStream {
+        type Connection = Connection<Self, Self>;
+
+        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+            unimplemented!();
         }
     }
 
@@ -86,15 +132,69 @@ mod server {
     where R: Read,
           W: Write
     {
-        fn into_ws(self) -> Result<Connection, Self> {
-            // TODO
+        type Connection = Connection<R, W>;
+
+        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+            unimplemented!();
         }
     }
 
+    // TODO: One for mio as well
     // TODO: More impls for hyper maybe?
 }
 
-mod client {
-    // TODO: Trait to turn a stream into a ws connection
-    // by initiating handshake
+pub mod client {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use openssl::ssl::SslStream;
+    use stream::WebSocketStream;
+    use client::Client;
+    use sender::Sender;
+    use receiver::Receiver;
+    use dataframe::DataFrame;
+    use result::WebSocketError;
+    /// Trait to turn a stream into a ws client by handshaking with the server
+    /// Note the stream should already be connected to the server
+    pub trait IntoWebSocket: Sized {
+        type Client;
+
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)>;
+    }
+
+    impl IntoWebSocket for WebSocketStream {
+        type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
+
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
+            unimplemented!();
+        }
+    }
+
+    impl IntoWebSocket for TcpStream {
+        type Client = Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>>;
+
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
+            unimplemented!();
+        }
+    }
+
+    impl IntoWebSocket for SslStream<TcpStream> {
+        type Client = Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>>;
+
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
+            unimplemented!();
+        }
+    }
+
+    impl<R, W> IntoWebSocket for (R, W)
+    where R: Read,
+          W: Write,
+    {
+        type Client = Client<DataFrame, Sender<W>, Receiver<R>>;
+
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
+            unimplemented!();
+        }
+    }
+
+    // TODO: Add one for mio
 }
