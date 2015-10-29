@@ -6,7 +6,6 @@ use std::marker::PhantomData;
 use std::io::Result as IoResult;
 
 use ws;
-use ws::util::url::ToWebSocketUrlComponents;
 use ws::receiver::{DataFrameIterator, MessageIterator};
 use result::{WebSocketResult, WebSocketError, WSUrlErrorKind};
 use stream::WebSocketStream;
