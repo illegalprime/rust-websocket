@@ -96,45 +96,60 @@ pub mod server {
     use stream::WebSocketStream;
     use server::Connection;
     use result::WebSocketError;
+    use client::Client;
+    use sender::Sender;
+    use receiver::Receiver;
+    use dataframe::DataFrame;
     /// Turns a RW stream into a ws connection if the ws handshake was successful
     /// Blocking read for a WebSocket
     pub trait IntoWebSocket: Sized {
-        type Connection;
+        type Client;
 
-        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)>;
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)>;
     }
 
     impl IntoWebSocket for TcpStream {
-        type Connection = Connection<Self, Self>;
+        type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
 
-        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
             unimplemented!();
         }
     }
 
     impl IntoWebSocket for SslStream<TcpStream> {
-        type Connection = Connection<Self, Self>;
+        type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
 
-        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
             unimplemented!();
         }
     }
 
     impl IntoWebSocket for WebSocketStream {
-        type Connection = Connection<Self, Self>;
+        type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
 
-        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
+            unimplemented!();
+        }
+    }
+
+    impl<R, W> IntoWebSocket for Connection<R, W>
+    where R: Read,
+          W: Write,
+    {
+        type Client = Client<DataFrame, Sender<W>, Receiver<R>>;
+
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
             unimplemented!();
         }
     }
 
     impl<R, W> IntoWebSocket for (R, W)
     where R: Read,
-          W: Write
+          W: Write,
     {
-        type Connection = Connection<R, W>;
+        type Client = Client<DataFrame, Sender<W>, Receiver<R>>;
 
-        fn into_ws(self) -> Result<Self::Connection, (Self, WebSocketError)> {
+        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
             unimplemented!();
         }
     }
