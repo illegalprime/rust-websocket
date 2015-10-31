@@ -22,6 +22,8 @@ use std::net::TcpStream;
 pub use hyper::buffer::BufReader;
 pub use hyper::error::Result as HyperResult;
 
+pub mod headers;
+
 pub struct Message<S>(Incoming<S>);
 pub type Response = RawStatus;
 pub type Request = (Method, RequestUri);
@@ -90,6 +92,9 @@ where R: Read {
 }
 
 pub mod server {
+    // TODO: Servers should get an itermediate form
+    // that shows the original ws request and lets the server filter
+    // through protocols, route, etc. Then send it back
     use std::io::{Read, Write};
     use std::net::TcpStream;
     use openssl::ssl::SslStream;
