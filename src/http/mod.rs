@@ -174,6 +174,8 @@ pub mod client {
     use dataframe::DataFrame;
     use result::WebSocketError;
     use super::handshake::RequestOpts as Opts;
+    use super::handshake::Request;
+    use ws::util::Serialize;
     /// Trait to turn a stream into a ws client by handshaking with the server
     /// Note the stream should already be connected to the server
     pub trait IntoWebSocket: Sized {
@@ -225,6 +227,13 @@ pub mod client {
         type Client = Client<DataFrame, Sender<W>, Receiver<R>>;
 
         fn into_ws(self, host: &str, opts: &Opts) -> Result<Self::Client, (Self, WebSocketError)> {
+            let (_, mut writer) = self;
+            // Create handshake
+            let handshake = Request::new(host, opts);
+            // Send handshake
+            handshake.serialize(&mut writer);
+            // Wait for Response
+            // Parse response and if correct return client
             unimplemented!();
         }
     }

@@ -8,6 +8,7 @@ use std::mem::transmute;
 use openssl::crypto::hash::{self, hash};
 use serialize::base64::{ToBase64, STANDARD};
 use rand::random;
+use ws::util::Serialize;
 
 pub struct Host<'a>(pub &'a str);
 pub struct Origin<'a>(pub &'a str);
@@ -164,11 +165,6 @@ impl<'a> Header for Origin<'a> {
     where W: Write {
         stream.write_all(self.0.as_bytes())
     }
-}
-
-pub trait Serialize {
-    fn serialize<W>(&self, stream: &mut W) -> Result<(), IoError>
-    where W: Write;
 }
 
 impl<H> Serialize for H

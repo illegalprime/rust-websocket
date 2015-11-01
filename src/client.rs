@@ -137,6 +137,7 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
 
 		// Start handshake
 		stream.into_ws(&host, &RequestOpts {
+			resource: url.serialize_path().as_ref().map(|p| p as &str),
 			protocols: options.protocols,
 		})
 		.map_err(|r| r.1)

@@ -2,12 +2,15 @@
 // Everything relating to HTTP reeusts/responses and WebSocket
 pub use super::headers::*;
 use std::io::Write;
+use ws::util::Serialize;
 
-pub struct RequestOpts<'bp, 'p: 'bp> {
+pub struct RequestOpts<'bp, 'p: 'bp, 'r> {
+    pub resource: Option<&'r str>,
     pub protocols: Option<&'bp [&'p str]>,
 }
 
 pub struct Request<'a> {
+    pub resource: &'a str,
     pub host: Host<'a>,
     pub upgrade: Upgrade<'a>,
     pub connection: Connection<'a>,
@@ -20,6 +23,10 @@ pub struct Request<'a> {
 impl<'a> Serialize for Request<'a> {
     fn serialize<W>(&self, stream: &mut W) -> Result<(), IoError>
     where W: Write {
+        try!( stream.write_all("GET ".as_bytes()) );
+        try!( stream.write_all(self.resource.as_bytes()) );
+        try!( stream.write_all(" HTTP/1.1\r\n".as_bytes()) );
+
         try!( self.host.serialize(stream) );
         try!( self.upgrade.serialize(stream) );
         try!( self.connection.serialize(stream) );
@@ -39,8 +46,9 @@ impl<'a> Serialize for Request<'a> {
 }
 
 impl<'a> Request<'a> {
-    pub fn new(host: &'a str, options: &RequestOpts<'a, 'a>) -> Self {
+    pub fn new<'b: 'a, 'c: 'a, 'd: 'a>(host: &'a str, options: &RequestOpts<'b, 'c, 'd>) -> Self {
         Request {
+            resource: options.resource.unwrap_or("/"),
             host: Host(host),
             upgrade: Upgrade("websocket"),
             connection: Connection("Upgrade"),
