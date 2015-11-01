@@ -15,7 +15,7 @@ use openssl::ssl::{SslContext, SslMethod, SslStream};
 use url::Url;
 use url::ParseError;
 use http::client::IntoWebSocket;
-use http::headers::handshake::RequestOpts;
+use http::handshake::RequestOpts;
 
 pub use super::sender::Sender;
 pub use super::receiver::Receiver;

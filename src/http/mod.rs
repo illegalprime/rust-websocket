@@ -23,6 +23,7 @@ pub use hyper::buffer::BufReader;
 pub use hyper::error::Result as HyperResult;
 
 pub mod headers;
+pub mod handshake;
 
 pub struct Message<S>(Incoming<S>);
 pub type Response = RawStatus;
@@ -93,8 +94,8 @@ where R: Read {
 
 pub mod server {
     // TODO: Servers should get an itermediate form
-    // that shows the original ws request and lets the server filter
-    // through protocols, route, etc. Then send it back
+    /// that shows the original ws request and lets the server filter
+    /// through protocols, route, etc. Then send it back
     use std::io::{Read, Write};
     use std::net::TcpStream;
     use openssl::ssl::SslStream;
@@ -158,7 +159,6 @@ pub mod server {
             unimplemented!();
         }
     }
-
     // TODO: One for mio as well
     // TODO: More impls for hyper maybe?
 }
@@ -173,7 +173,7 @@ pub mod client {
     use receiver::Receiver;
     use dataframe::DataFrame;
     use result::WebSocketError;
-    use super::headers::handshake::RequestOpts as Opts;
+    use super::handshake::RequestOpts as Opts;
     /// Trait to turn a stream into a ws client by handshaking with the server
     /// Note the stream should already be connected to the server
     pub trait IntoWebSocket: Sized {
