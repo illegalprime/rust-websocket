@@ -173,35 +173,48 @@ pub mod client {
     use receiver::Receiver;
     use dataframe::DataFrame;
     use result::WebSocketError;
+    use super::headers::handshake::RequestOpts as Opts;
     /// Trait to turn a stream into a ws client by handshaking with the server
     /// Note the stream should already be connected to the server
     pub trait IntoWebSocket: Sized {
         type Client;
 
-        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)>;
+        fn into_ws(self, host: &str, opts: &Opts) -> Result<Self::Client, (Self, WebSocketError)>;
     }
 
     impl IntoWebSocket for WebSocketStream {
         type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
 
-        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
-            unimplemented!();
+        fn into_ws(self, host: &str, opts: &Opts) -> Result<Self::Client, (Self, WebSocketError)> {
+            let cloned = match self.try_clone() {
+                Ok(c) => c,
+                Err(e) => return Err((self, e.into())),
+            };
+            (cloned, self).into_ws(host, opts).map_err(|(s, e)| (s.0, e))
         }
     }
 
     impl IntoWebSocket for TcpStream {
-        type Client = Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>>;
+        type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
 
-        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
-            unimplemented!();
+        fn into_ws(self, host: &str, opts: &Opts) -> Result<Self::Client, (Self, WebSocketError)> {
+            let cloned = match self.try_clone() {
+                Ok(c) => c,
+                Err(e) => return Err((self, e.into())),
+            };
+            (cloned, self).into_ws(host, opts).map_err(|(s, e)| (s.0, e))
         }
     }
 
     impl IntoWebSocket for SslStream<TcpStream> {
-        type Client = Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>>;
+        type Client = Client<DataFrame, Sender<Self>, Receiver<Self>>;
 
-        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
-            unimplemented!();
+        fn into_ws(self, host: &str, opts: &Opts) -> Result<Self::Client, (Self, WebSocketError)> {
+            let cloned = match self.try_clone() {
+                Ok(c) => c,
+                Err(e) => return Err((self, e.into())),
+            };
+            (cloned, self).into_ws(host, opts).map_err(|(s, e)| (s.0, e))
         }
     }
 
@@ -211,7 +224,7 @@ pub mod client {
     {
         type Client = Client<DataFrame, Sender<W>, Receiver<R>>;
 
-        fn into_ws(self) -> Result<Self::Client, (Self, WebSocketError)> {
+        fn into_ws(self, host: &str, opts: &Opts) -> Result<Self::Client, (Self, WebSocketError)> {
             unimplemented!();
         }
     }

@@ -15,9 +15,26 @@ use openssl::ssl::{SslContext, SslMethod, SslStream};
 use url::Url;
 use url::ParseError;
 use http::client::IntoWebSocket;
+use http::headers::handshake::RequestOpts;
 
 pub use super::sender::Sender;
 pub use super::receiver::Receiver;
+
+pub struct Opts<'bp, 'p: 'bp> {
+	pub ssl: Option<SslContext>,
+	pub protocols: Option<&'bp [&'p str]>,
+	// TODO
+	// pub extensions: &'be [&'e str],
+}
+
+impl<'a, 'b> Default for Opts<'a, 'b> {
+	fn default() -> Self {
+		Opts {
+			ssl: None,
+			protocols: None,
+		}
+	}
+}
 
 /// Represents a WebSocket client, which can send and receive messages/data frames.
 ///
@@ -64,21 +81,22 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
 	/// A connection is established, however the request is not sent to
 	/// the server until a call to ```send()```.
 	pub fn connect(url: &Url) -> WebSocketResult<Self> {
-		Client::create(url, None)
-	}
-	/// Connects to the specified wss:// URL using the given SSL context.
-	///
-	/// If a ws:// URL is supplied, a normal, non-secure connection is established
-	/// and the context parameter is ignored.
-	///
-	/// A connection is established, however the request is not sent to
-	/// the server until a call to ```send()```.
-	pub fn connect_ssl(url: &Url, ssl: &SslContext) -> WebSocketResult<Self> {
-		Client::create(url, Some(ssl))
+		Client::connect_with(url, &Default::default())
 	}
 
+	// /// Connects to the specified wss:// URL using the given SSL context.
+	// ///
+	// /// If a ws:// URL is supplied, a normal, non-secure connection is established
+	// /// and the context parameter is ignored.
+	// ///
+	// /// A connection is established, however the request is not sent to
+	// /// the server until a call to ```send()```.
+	// pub fn connect_ssl(url: &Url, ssl: &SslContext) -> WebSocketResult<Self> {
+	// 	Client::create(url, Some(ssl))
+	// }
+
 	// TODO: Don't hardcode "ws" and "wss"
-	fn create(url: &Url, ssl: Option<&SslContext>) -> WebSocketResult<Self> {
+	pub fn connect_with(url: &Url, options: &Opts) -> WebSocketResult<Self> {
 		// Find the port number
 		let port = match url.port() {
 			Some(p) => p,
@@ -93,17 +111,20 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
 			}
 		};
 
-		// Connect to the server
-		let stream = match url.domain() {
-			Some(host) => try!(TcpStream::connect((host, port))),
+		// Find the host
+		let host = match url.host() {
+			Some(host) => host.serialize(),
 			None => return Err(WebSocketError::UrlError(
 				ParseError::EmptyHost
 			)),
 		};
 
+		// Connect to server with TCP
+		let stream = try!(TcpStream::connect((&host as &str, port)));
+
 		// Add SSL if necessary
 		let stream = if &url.scheme as &str == "wss" {
-			let sslstream = if let Some(ref context) = ssl {
+			let sslstream = if let Some(ref context) = options.ssl {
 				SslStream::new(context, stream)
 			} else {
 				let context = try!(SslContext::new(SslMethod::Tlsv1));
@@ -115,7 +136,10 @@ impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
 		};
 
 		// Start handshake
-		stream.into_ws().map_err(|r| r.1)
+		stream.into_ws(&host, &RequestOpts {
+			protocols: options.protocols,
+		})
+		.map_err(|r| r.1)
 	}
 
     /// Shuts down the sending half of the client connection, will cause all pending

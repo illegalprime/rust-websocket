@@ -188,6 +188,10 @@ pub mod handshake {
     pub use super::header::*;
     use std::io::Write;
 
+    pub struct RequestOpts<'bp, 'p: 'bp> {
+        pub protocols: Option<&'bp [&'p str]>,
+    }
+
     pub struct Request<'a> {
         pub host: Host<'a>,
         pub upgrade: Upgrade<'a>,
@@ -220,13 +224,13 @@ pub mod handshake {
     }
 
     impl<'a> Request<'a> {
-        pub fn new(host: &'a str) -> Self {
+        pub fn new(host: &'a str, options: &RequestOpts<'a, 'a>) -> Self {
             Request {
                 host: Host(host),
                 upgrade: Upgrade("websocket"),
                 connection: Connection("Upgrade"),
                 key: WebSocketKey::new(),
-                protocol: None,
+                protocol: options.protocols.map(|p| WebSocketProtocol(p)),
                 // TODO: Support more versions!
                 version: WebSocketVersion(&WS_13),
                 origin: None,
@@ -265,7 +269,7 @@ pub mod handshake {
     }
 
     impl<'a> Response<'a> {
-        pub fn accept(request: Request) -> Self {
+        pub fn accept(request: Request<'a>) -> Self {
             Response {
                 upgrade: request.upgrade,
                 connection: request.connection,
@@ -274,7 +278,7 @@ pub mod handshake {
             }
         }
 
-        pub fn accept_protocols(request: Request, protocols: &'a [&'a str]) -> Self {
+        pub fn accept_protocols(request: Request<'a>, protocols: &'a [&'a str]) -> Self {
             Response {
                 upgrade: request.upgrade,
                 connection: request.connection,
