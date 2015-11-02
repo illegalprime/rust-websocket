@@ -5,7 +5,6 @@ use std::io::{Read, Write};
 use std::io;
 pub use super::sender::Sender;
 pub use super::receiver::Receiver;
-pub use http::server::IntoWebSocket;
 
 use stream::WebSocketStream;
 
