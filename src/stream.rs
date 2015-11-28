@@ -1,8 +1,5 @@
 //! Provides the default stream type for WebSocket connections.
-extern crate net2;
-
 use std::io::{self, Read, Write};
-use self::net2::TcpStreamExt;
 use openssl::ssl::SslStream;
 
 pub use std::net::{SocketAddr, Shutdown, TcpStream};
@@ -55,20 +52,6 @@ impl WebSocketStream {
 			WebSocketStream::Ssl(ref mut inner) => inner.get_mut().local_addr(),
 		}
 	}
-	/// See `TcpStream.set_nodelay()`.
-	pub fn set_nodelay(&mut self, nodelay: bool) -> io::Result<()> {
-		match *self {
-			WebSocketStream::Tcp(ref mut inner) => TcpStreamExt::set_nodelay(inner, nodelay),
-			WebSocketStream::Ssl(ref mut inner) => TcpStreamExt::set_nodelay(inner.get_mut(), nodelay),
-		}
-	}
-	/// See `TcpStream.set_keepalive()`.
-	pub fn set_keepalive(&mut self, delay_in_ms: Option<u32>) -> io::Result<()> {
-		match *self {
-			WebSocketStream::Tcp(ref mut inner) => TcpStreamExt::set_keepalive_ms(inner, delay_in_ms),
-			WebSocketStream::Ssl(ref mut inner) => TcpStreamExt::set_keepalive_ms(inner.get_mut(), delay_in_ms),
-		}
-	}
 	/// See `TcpStream.shutdown()`.
 	pub fn shutdown(&mut self, shutdown: Shutdown) -> io::Result<()> {
 		match *self {
@@ -82,5 +65,19 @@ impl WebSocketStream {
 			WebSocketStream::Tcp(ref inner) => WebSocketStream::Tcp(try!(inner.try_clone())),
 			WebSocketStream::Ssl(ref inner) => WebSocketStream::Ssl(try!(inner.try_clone())),
 		})
+	}
+	/// Returns a borrow to the inner TCP Stream
+	pub fn inner(&self) -> &TcpStream {
+		match self {
+			&WebSocketStream::Tcp(ref inner) => inner,
+			&WebSocketStream::Ssl(ref inner) => inner.get_ref(),
+		}
+	}
+	/// Returns a mutable borrow to the inner TCP Stream
+	pub fn inner_mut(&mut self) -> &mut TcpStream {
+		match self {
+			&mut WebSocketStream::Tcp(ref mut inner) => inner,
+			&mut WebSocketStream::Ssl(ref mut inner) => inner.get_mut(),
+		}
 	}
 }
