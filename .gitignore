@@ -17,6 +17,9 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 
+# Vim backup files
+*.swp
+
 # =========================
 # Operating System Files
 # =========================
@@ -44,3 +47,4 @@ Icon
 .AppleDesktop
 Network Trash Folder
 Temporary Items
+
