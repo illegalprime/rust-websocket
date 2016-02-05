@@ -23,6 +23,9 @@ pub use receiver::Receiver;
 pub mod request;
 pub mod response;
 
+mod builder;
+pub use self::builder::ClientBuilder;
+
 /// Represents a WebSocket client, which can send and receive messages/data frames.
 ///
 /// `D` is the data frame type, `S` is the type implementing `Sender<D>` and `R`
