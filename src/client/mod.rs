@@ -66,39 +66,6 @@ pub struct Client<F, S, R> {
 }
 
 impl Client<DataFrame, Sender<WebSocketStream>, Receiver<WebSocketStream>> {
-	/// Connects to the given ws:// or wss:// URL and return a Request to be sent.
-	///
-	/// A connection is established, however the request is not sent to
-	/// the server until a call to ```send()```.
-	pub fn connect<T: ToWebSocketUrlComponents>(components: T) -> WebSocketResult<Request<WebSocketStream, WebSocketStream>> {
-		let context = try!(SslContext::new(SslMethod::Tlsv1));
-		Client::connect_ssl_context(components, &context)
-	}
-	/// Connects to the specified wss:// URL using the given SSL context.
-	///
-	/// If a ws:// URL is supplied, a normal, non-secure connection is established
-	/// and the context parameter is ignored.
-	///
-	/// A connection is established, however the request is not sent to
-	/// the server until a call to ```send()```.
-	pub fn connect_ssl_context<T: ToWebSocketUrlComponents>(components: T, context: &SslContext) -> WebSocketResult<Request<WebSocketStream, WebSocketStream>> {
-		let (host, resource_name, secure) = try!(components.to_components());
-
-		let connection = try!(TcpStream::connect(
-			(&host.hostname[..], host.port.unwrap_or(if secure { 443 } else { 80 }))
-		));
-
-		let stream = if secure {
-			let sslstream = try!(SslStream::connect(context, connection));
-			WebSocketStream::Ssl(sslstream)
-		}
-		else {
-			WebSocketStream::Tcp(connection)
-		};
-
-		Request::new((host, resource_name, secure), try!(stream.try_clone()), stream)
-	}
-
     /// Shuts down the sending half of the client connection, will cause all pending
     /// and future IO to return immediately with an appropriate value.
     pub fn shutdown_sender(&mut self) -> IoResult<()> {
