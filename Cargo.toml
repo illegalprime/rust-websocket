@@ -31,9 +31,12 @@ tokio-io = { version = "^0.1.2", optional = true }
 tokio-tls = { version = "0.1", optional = true }
 bytes = { version = "0.4", optional = true }
 native-tls = { version = "^0.1.2", optional = true }
+deflate = { version = "^0.7.11", optional = true }
+libz-sys = { version = "^1.0.13", optional = true }
 
 [features]
-default = ["sync", "sync-ssl", "async", "async-ssl"]
+default = ["sync", "sync-ssl", "async", "async-ssl", "ext-deflate"]
+ext-deflate = ["libz-sys", "deflate"]
 sync = []
 sync-ssl = ["native-tls", "sync"]
 async = ["tokio-core", "tokio-io", "bytes", "futures"]

@@ -4,11 +4,8 @@ use hyper::header::{Header, HeaderFormat};
 use hyper::header::parsing::{from_comma_delimited, fmt_comma_delimited};
 use hyper;
 use std::fmt;
-use std::str::FromStr;
 use std::ops::Deref;
-use result::{WebSocketResult, WebSocketError};
-
-const INVALID_EXTENSION: &'static str = "Invalid Sec-WebSocket-Extensions extension name";
+pub use extensions::Extension;
 
 // TODO: check if extension name is valid according to spec
 
@@ -21,87 +18,6 @@ impl Deref for WebSocketExtensions {
 
 	fn deref(&self) -> &Vec<Extension> {
 		&self.0
-	}
-}
-
-#[derive(PartialEq, Clone, Debug)]
-/// A WebSocket extension
-pub struct Extension {
-	/// The name of this extension
-	pub name: String,
-	/// The parameters for this extension
-	pub params: Vec<Parameter>,
-}
-
-impl Extension {
-	/// Creates a new extension with the given name
-	pub fn new(name: String) -> Extension {
-		Extension {
-			name: name,
-			params: Vec::new(),
-		}
-	}
-}
-
-impl FromStr for Extension {
-	type Err = WebSocketError;
-
-	fn from_str(s: &str) -> WebSocketResult<Extension> {
-		let mut ext = s.split(';').map(|x| x.trim());
-		Ok(Extension {
-		       name: match ext.next() {
-		           Some(x) => x.to_string(),
-		           None => return Err(WebSocketError::ProtocolError(INVALID_EXTENSION)),
-		       },
-		       params: ext.map(|x| {
-			                       let mut pair = x.splitn(1, '=').map(|x| x.trim().to_string());
-
-			                       Parameter {
-			                           name: pair.next().unwrap(),
-			                           value: pair.next(),
-			                       }
-			                      })
-		                  .collect(),
-		   })
-	}
-}
-
-impl fmt::Display for Extension {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		try!(write!(f, "{}", self.name));
-		for param in &self.params {
-			try!(write!(f, "; {}", param));
-		}
-		Ok(())
-	}
-}
-
-#[derive(PartialEq, Clone, Debug)]
-/// A parameter for an Extension
-pub struct Parameter {
-	/// The name of this parameter
-	pub name: String,
-	/// The value of this parameter, if any
-	pub value: Option<String>,
-}
-
-impl Parameter {
-	/// Creates a new parameter with the given name and value
-	pub fn new(name: String, value: Option<String>) -> Parameter {
-		Parameter {
-			name: name,
-			value: value,
-		}
-	}
-}
-
-impl fmt::Display for Parameter {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		try!(write!(f, "{}", self.name));
-		if let Some(ref x) = self.value {
-			try!(write!(f, "={}", x));
-		}
-		Ok(())
 	}
 }
 

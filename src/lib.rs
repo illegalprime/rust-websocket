@@ -35,6 +35,8 @@ extern crate rand;
 extern crate byteorder;
 extern crate sha1;
 extern crate base64;
+#[cfg(feature="deflate")]
+extern crate deflate;
 #[cfg(any(feature="sync-ssl", feature="async-ssl"))]
 extern crate native_tls;
 #[cfg(feature="async")]
@@ -69,6 +71,7 @@ macro_rules! upsert_header {
     }}
 }
 
+pub mod extensions;
 pub mod ws;
 pub mod dataframe;
 pub mod message;
